@@ -1,5 +1,9 @@
 from pandas import DataFrame
 
+from Pipeline.DataProcessor.DataCleaning.cleaner import Cleaner
+from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
+
+
 class Processor:
     """
         Data processing module; the first component of the pipeline.
@@ -13,10 +17,7 @@ class Processor:
         :param config: configuration dictionary that contains the logic of processing data
         """
         self._config = config
-        # self._mapper =
-
-
-
+        self._mapper = Mapper("Processor")
 
 
     def process(self, data: DataFrame):
@@ -28,7 +29,23 @@ class Processor:
         :exception: TODO
         """
 
-        pass
+        if self._config.get("NO_PROCESSING",True):      #no processing configured in the configuration file
+            return data
+
+        ## go over all the steps in the data processing pipeline
+
+        # 1. Data cleaning
+        if self._config.get("DATA_CLEANING", False):    #data cleaning set to be done
+            cleaner = Cleaner(self._config.get("DATA_CLEANING_CONFIG", {}))
+            data = cleaner.clean(data, self._mapper)
+
+        # 2. Data splitting
+
+        # 3. Feature engineering
+
+        # 4. Retrieve mappings
+
+        # 5. Create the output
 
     def convert(self, data: DataFrame):
         """

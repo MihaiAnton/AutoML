@@ -1,3 +1,24 @@
 {
-  "DataProcessor": {}
+  "DataProcessor": {
+    "NO_PROCESSING": false,
+
+
+    "DATA_CLEANING": true,
+    "DATA_CLEANING_CONFIG": {
+      "REMOVE_WHERE_Y_MISSING": true,
+      "REMOVE_ROWS": true,
+      "ROW_REMOVAL_THRESHOLD": 0.6,
+      "REMOVE_COLUMNS": true,
+      "COLUMN_REMOVAL_THRESHOLD": 0.6
+    },
+
+
+    "PREDICTED_COLUMN_NAME": "output",
+
+
+    "FEATURE_ENGINEERING": true,
+    "FEATURE_ENGINEERING_CONFIG": {
+
+    }
+  }
 }
