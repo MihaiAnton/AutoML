@@ -7,8 +7,17 @@ class Processor:
         Unless a configuration is passed as an argument the default one is used.
     """
 
-    def __init__(self, config=None):
-        pass
+    def __init__(self, config:dict):
+        """
+            Inits the data processor with the configuration parsed from the json file
+        :param config: configuration dictionary that contains the logic of processing data
+        """
+        self._config = config
+        # self._mapper =
+
+
+
+
 
     def process(self, data: DataFrame):
         """
