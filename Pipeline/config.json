@@ -1,19 +1,20 @@
 {
-  "DataProcessor": {
+  "DATA_PROCESSING": true,
+  "DATA_PROCESSING_CONFIG": {
     "NO_PROCESSING": false,
 
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
       "REMOVE_WHERE_Y_MISSING": true,
-      "REMOVE_ROWS": true,
+      "REMOVE_ROWS": false,
       "ROW_REMOVAL_THRESHOLD": 0.6,
       "REMOVE_COLUMNS": true,
-      "COLUMN_REMOVAL_THRESHOLD": 0.6
+      "COLUMN_REMOVAL_THRESHOLD": 0.05
     },
 
 
-    "PREDICTED_COLUMN_NAME": "output",
+    "PREDICTED_COLUMN_NAME": "Survived",
 
 
     "FEATURE_ENGINEERING": true,

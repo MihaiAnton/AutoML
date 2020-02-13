@@ -37,7 +37,8 @@ class Processor:
         # 1. Data cleaning
         if self._config.get("DATA_CLEANING", False):    #data cleaning set to be done
             cleaner = Cleaner(self._config.get("DATA_CLEANING_CONFIG", {}))
-            data = cleaner.clean(data, self._mapper)
+            y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
+            data = cleaner.clean(data, self._mapper, y_column)
 
         # 2. Data splitting
 
@@ -46,6 +47,8 @@ class Processor:
         # 4. Retrieve mappings
 
         # 5. Create the output
+
+        return data
 
     def convert(self, data: DataFrame):
         """
