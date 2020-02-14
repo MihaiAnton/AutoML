@@ -1,6 +1,7 @@
 from pandas import DataFrame
 
 from Pipeline.DataProcessor.DataCleaning.cleaner import Cleaner
+from Pipeline.DataProcessor.DataSplitting.splitter import Splitter
 from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
 
 
@@ -17,7 +18,7 @@ class Processor:
         :param config: configuration dictionary that contains the logic of processing data
         """
         self._config = config
-        self._mapper = Mapper("Processor")
+        self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
 
 
     def process(self, data: DataFrame):
@@ -41,8 +42,16 @@ class Processor:
             data = cleaner.clean(data, self._mapper, y_column)
 
         # 2. Data splitting
+        y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
+        result = Splitter.XYsplit(data, y_column)
+        if result is None:
+            #TODO throw exception
+            pass
+
+        X,Y = result        #init the X and Y variables
 
         # 3. Feature engineering
+
 
         # 4. Retrieve mappings
 
