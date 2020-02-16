@@ -40,6 +40,10 @@ class Pipeline:
         if self._config.get("DATA_PROCESSING", False):
             result = self._processor.process(result)
 
+        # must be deleted later
+        result.to_csv("Datasets/titanic_generated.csv")
+
+
         # 2. #TODO
 
         return result

@@ -1,7 +1,9 @@
 from pandas import DataFrame
+from pandas import concat
 
 from Pipeline.DataProcessor.DataCleaning.cleaner import Cleaner
 from Pipeline.DataProcessor.DataSplitting.splitter import Splitter
+from Pipeline.DataProcessor.FeatureEngineering.engineer import Engineer
 from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
 
 
@@ -51,11 +53,15 @@ class Processor:
         X,Y = result        #init the X and Y variables
 
         # 3. Feature engineering
-
+        if self._config.get("FEATURE_ENGINEERING", False):  #feature engineering set to be done
+            engineer = Engineer(self._config.get("FEATURE_ENGINEERING_CONFIG", {}))
+            X = engineer.process(X, self._mapper,{})
 
         # 4. Retrieve mappings
+        #TODO save the mappings to file
 
         # 5. Create the output
+        data = concat([X, Y], axis=1)
 
         return data
 

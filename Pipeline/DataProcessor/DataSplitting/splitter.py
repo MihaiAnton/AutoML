@@ -3,7 +3,7 @@ from pandas import DataFrame
 
 class Splitter:
     """
-        Handles the X,Y split logic.
+        Handles the data split logic.
     """
 
     @staticmethod

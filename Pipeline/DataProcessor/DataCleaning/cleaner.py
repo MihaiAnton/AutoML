@@ -20,6 +20,13 @@ class Cleaner:
         if self._config.get('REMOVE_WHERE_Y_MISSING', False) and not(predicted_col is None):     #if it exists and if it is set on true
             data = data.dropna(subset=[predicted_col])
 
+        #remove cols which are explicitly set to be removed
+        cols_to_remove = self._config.get('COLUMNS_TO_REMOVE', [])
+        for column in cols_to_remove:
+            if column in data.columns:
+                data.drop(column, axis=1, inplace=True)
+
+
         #remove lines with more than ROW_REMOVAL_THRESHOLD % missing values
         if self._config.get('REMOVE_ROWS', False):
             column_count = len(data.columns)
