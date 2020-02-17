@@ -28,7 +28,14 @@ class Pipeline:
         else:
             self._config = config
         if self._config.get("DATA_PROCESSING", False):
-            self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"))
+            self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), file=mapper_file)
+
+    def process(self, data:DataFrame):
+        """
+            Processes the data according to the configuration in the config file
+        :param data: DataFrame containing the raw data that has to be transformed
+        :return: DataFrame with the omdified data
+        """
 
     def fit(self, data: DataFrame):
         """

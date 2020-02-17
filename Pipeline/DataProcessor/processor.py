@@ -15,16 +15,20 @@ class Processor:
         Unless a configuration is passed as an argument the default one is used.
     """
 
-    def __init__(self, config:dict, file=None):
+    def __init__(self, config=None, file=None):
         """
             Inits the data processor with the configuration parsed from the json file
         :param config: configuration dictionary that contains the logic of processing data
         """
-        self._config = config
         if file is None:
             self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
         else:
             self._mapper = Mapper("Processor", file=file)
+
+        if config is None:
+            config = self._mapper.get("PROCESSOR_CONFIG",{})
+        self._config = config
+
 
     def process(self, data: DataFrame):
         """
@@ -36,12 +40,14 @@ class Processor:
         """
 
         if self._config.get("NO_PROCESSING",True):      #no processing configured in the configuration file
+            self._mapper.set("NO_PROCESSING",True)
             return data
 
         ## go over all the steps in the data processing pipeline
 
         # 1. Data cleaning
         if self._config.get("DATA_CLEANING", False):    #data cleaning set to be done
+            self._mapper.set("DATA_CLEANING",True)
             cleaner = Cleaner(self._config.get("DATA_CLEANING_CONFIG", {}))
             y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
             data = cleaner.clean(data, self._mapper, y_column)
@@ -56,6 +62,7 @@ class Processor:
 
         # 3. Feature engineering
         if self._config.get("FEATURE_ENGINEERING", False):  #feature engineering set to be done
+            self._mapper.set("FEATURE_ENGINEERING", True)
             engineer = Engineer(self._config.get("FEATURE_ENGINEERING_CONFIG", {}))
             X = engineer.process(X, self._mapper,{})
 
@@ -73,9 +80,22 @@ class Processor:
             Used after data processing for further predictions.
         :param data: Raw data input for prediction purpose
         :return: data transformed in a format previously determined by the logic within process method
-        :exception: TODO
+        :exception:
         """
-        pass
+        if self._mapper.get("NO_PROCESSING", False):
+            return data
+
+        ## go over all the steps in the data processing pipeline
+        # 1. Data cleaning
+        if self._mapper.get("DATA_CLEANING", False):  # data cleaning set to be done
+            data = Cleaner.convert(data, self._mapper)
+
+        # 2. Feature engineering
+        if self._mapper.get("FEATURE_ENGINEERING", False):  # feature engineering set to be done
+            data = Engineer.convert(data, self._mapper)
+
+        return data
+
 
     def save_processor(self, file: str):
         """
@@ -85,19 +105,21 @@ class Processor:
         :exception: DataProcessorException
         """
         try:
+            self._mapper.set("PROCESSOR_CONFIG", self._config)
             self._mapper.save_to_file(file)
         except:
             raise DataProcessorException("Error while saving processor to file {}.".format(file))
 
-
-    def _load_processor(self,file=str):
+    @staticmethod
+    def load_processor(file:str):
         """
-            Loads a processor from a processor file and returns the object.
+
         :param file: the file where a processor has been previously saved with the save_processor method
         :return: the instance of a processor class with the logic within the file
         :exception:
         """
-        pass
+        #the file contains the mapper, and withing the mapper it already exists a configuration
+        return Processor(file = file)
 
 
 

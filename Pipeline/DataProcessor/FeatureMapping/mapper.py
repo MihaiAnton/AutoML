@@ -68,13 +68,13 @@ class Mapper:
         self._get_fields()[key] = value
         return value
 
-    def get(self, key):
+    def get(self, key, default=None):
         """
             Gets the value of a key
         :param key: the key to search for
         :return: the value of the key or None if the key does not exist
         """
-        return self._get_fields().get(key, None)
+        return self._get_fields().get(key, default)
 
     def get_map(self):
         """

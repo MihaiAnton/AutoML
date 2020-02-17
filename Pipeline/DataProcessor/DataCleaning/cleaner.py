@@ -15,8 +15,8 @@ class Cleaner:
         :param mapper: the mapper class that saves all the changes
         :return: the cleaned data
         """
-
-        #remove cols with predicted value missing
+        cols_to_drop = []
+        #remove rows with predicted value missing
         if self._config.get('REMOVE_WHERE_Y_MISSING', False) and not(predicted_col is None):     #if it exists and if it is set on true
             if predicted_col in data.columns:
                 data = data.dropna(subset=[predicted_col])
@@ -25,6 +25,7 @@ class Cleaner:
         cols_to_remove = self._config.get('COLUMNS_TO_REMOVE', [])
         for column in cols_to_remove:
             if column in data.columns:
+                cols_to_drop.append(column)
                 data.drop(column, axis=1, inplace=True)
 
 
@@ -37,12 +38,13 @@ class Cleaner:
         if self._config.get('REMOVE_COLUMNS', False):
             row_count = len(data.index)
             remove_threshold = float(self._config.get('COLUMN_REMOVAL_THRESHOLD', 1))
-            cols_to_drop = data.columns[data.isna().sum()>=row_count*remove_threshold].tolist()
+            cols_to_drop_null = data.columns[data.isna().sum()>=row_count*remove_threshold].tolist()
+            cols_to_drop = cols_to_drop + cols_to_drop_null
 
-            #mark the deleted columns
-            self._mapper.set("RemovedColumns", cols_to_drop)
+            data = data.drop(cols_to_drop_null, axis=1)
 
-            data = data.drop(cols_to_drop, axis=1)
+        # mark the deleted columns
+        self._mapper.set("RemovedColumns", cols_to_drop)
 
         #set the mapper
         mapper.set_mapper(self._mapper)
@@ -54,14 +56,24 @@ class Cleaner:
 
 
 
-
-    def convert(self, data:DataFrame, mapper: 'Mapper'):
+    @staticmethod
+    def convert(data:DataFrame, mapper: 'Mapper'):
         """
             Based on the mapping determined in the clean method, it cleans the input data accordingly.
         :param mapper: mapper class instance that holds all the changes that have to be done to the dataset
         :param data: the raw input that needs to be converted
         :return: the converted data
         """
+        mapper = mapper.get_mapper("Cleaner")
+        removed_columns = mapper.get("RemovedColumns",[])
+
+        for column in removed_columns:
+            if column in data.columns:
+                data.drop(column, axis=1, inplace=True)
+
+        data.reset_index(drop=True, inplace=True)
+        return data
+
 
 
 
