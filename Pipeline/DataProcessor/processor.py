@@ -1,11 +1,12 @@
 from pandas import DataFrame
 from pandas import concat
 
-from Pipeline.DataProcessor.DataCleaning.cleaner import Cleaner
-from Pipeline.DataProcessor.DataSplitting.splitter import Splitter
-from Pipeline.DataProcessor.FeatureEngineering.engineer import Engineer
-from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
 
+from .DataCleaning import Cleaner
+from .DataSplitting import Splitter
+from .FeatureEngineering import Engineer
+from .FeatureMapping import Mapper
+from ..Exceptions.dataProcessorException import DataProcessorException
 
 class Processor:
     """
@@ -14,14 +15,16 @@ class Processor:
         Unless a configuration is passed as an argument the default one is used.
     """
 
-    def __init__(self, config:dict):
+    def __init__(self, config:dict, file=None):
         """
             Inits the data processor with the configuration parsed from the json file
         :param config: configuration dictionary that contains the logic of processing data
         """
         self._config = config
-        self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
-
+        if file is None:
+            self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
+        else:
+            self._mapper = Mapper("Processor", file=file)
 
     def process(self, data: DataFrame):
         """
@@ -29,7 +32,7 @@ class Processor:
             Received raw data and returns data ready to be fed into the next step of the pipeline or into a learning algorithm.
         :param data: Raw data input, in form of DataFrame
         :return: cleaned and processed data, in form of DataFrame
-        :exception: TODO
+        :exception: DataProcessorException
         """
 
         if self._config.get("NO_PROCESSING",True):      #no processing configured in the configuration file
@@ -47,8 +50,7 @@ class Processor:
         y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
         result = Splitter.XYsplit(data, y_column)
         if result is None:
-            #TODO throw exception
-            pass
+            raise DataProcessorException("Expected (X,Y) tuple of DataFrames from XYsplit but got None instead")
 
         X,Y = result        #init the X and Y variables
 
@@ -58,7 +60,7 @@ class Processor:
             X = engineer.process(X, self._mapper,{})
 
         # 4. Retrieve mappings
-        #TODO save the mappings to file
+        # mappings are already in the mapper field, which would be saved to file as soon as the save_processor is called
 
         # 5. Create the output
         data = concat([X, Y], axis=1)
@@ -75,24 +77,25 @@ class Processor:
         """
         pass
 
-    @staticmethod
-    def save_processor(processor: 'Processor', file: str):
+    def save_processor(self, file: str):
         """
             Saves the processor logic to disc.
-        :param processor: previously trained processor
         :param file: text file for saving the data
         :return: None on error | processor on success for chaining reasons
-        :exception: TODO
+        :exception: DataProcessorException
         """
-        pass
+        try:
+            self._mapper.save_to_file(file)
+        except:
+            raise DataProcessorException("Error while saving processor to file {}.".format(file))
 
-    @staticmethod
-    def load_processor(file):
+
+    def _load_processor(self,file=str):
         """
             Loads a processor from a processor file and returns the object.
         :param file: the file where a processor has been previously saved with the save_processor method
         :return: the instance of a processor class with the logic within the file
-        :exception: TODO
+        :exception:
         """
         pass
 

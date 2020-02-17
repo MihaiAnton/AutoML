@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
+from ..FeatureMapping import Mapper
 
 class Cleaner:
 
@@ -18,7 +18,8 @@ class Cleaner:
 
         #remove cols with predicted value missing
         if self._config.get('REMOVE_WHERE_Y_MISSING', False) and not(predicted_col is None):     #if it exists and if it is set on true
-            data = data.dropna(subset=[predicted_col])
+            if predicted_col in data.columns:
+                data = data.dropna(subset=[predicted_col])
 
         #remove cols which are explicitly set to be removed
         cols_to_remove = self._config.get('COLUMNS_TO_REMOVE', [])

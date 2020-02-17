@@ -1,3 +1,4 @@
+import json
 
 
 class Mapper:
@@ -110,8 +111,9 @@ class Mapper:
         :param file: file to load the mapper from
         :return: mapper
         """
-
-        # TODO read the dictionary from file and save it locally
+        with open(file) as f:
+            data = json.load(f)
+            self._map = data
         return self
 
 
@@ -121,7 +123,9 @@ class Mapper:
         :param file: path to save file
         :return: current mapper
         """
-        # TODO save to file
+        import json
+        with open(file, 'w') as f:
+            json.dump(self.get_map(),f)
         return self
 
 

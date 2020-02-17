@@ -6,12 +6,12 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
+      "COLUMNS_TO_REMOVE": ["PassengerId"],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
       "ROW_REMOVAL_THRESHOLD": 0.6,
       "REMOVE_COLUMNS": true,
-      "COLUMN_REMOVAL_THRESHOLD": 0.6,
-      "COLUMNS_TO_REMOVE": ["PassengerId"]
+      "COLUMN_REMOVAL_THRESHOLD": 0.6
     },
 
 
@@ -21,26 +21,31 @@
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
       "DO_NOT_PROCESS": [],
+      "CONTINUOUS_FEATURES": [],
+      "CATEGORICAL_FEATURES": [],
 
       "CATEGORICAL_THRESHOLD": 0.08,
       "CONTINUOUS_DATA_CONFIG": {
         "NUMERIC": {
-          "OUTLIER_STDEV_FROM_MEAN": 4,
+          "NOT_PROCESS": false,
+          "OUTLIER_STDEV_FROM_MEAN": 3,
           "NORMALIZATION_METHOD": "z_score",
-          "POLYNOMIAL_FEATURES": 5
+          "POLYNOMIAL_FEATURES": 3
         },
         "TEXTUAL": {
           "WORD_DELIMITERS": "?!|/.,:;'-={}[]()",
-          "MAX_GENERATED_FEATURES": 4
+          "MAX_GENERATED_FEATURES": 5
         }
       },
 
       "CATEGORICAL_DATA_CONFIG": {
         "NUMERIC": {
-
+          "NOT_PROCESS": false,
+          "METHOD": "one_hot_encode"
         },
         "TEXTUAL": {
-
+          "NOT_PROCESS": false,
+          "METHOD": "one_hot_encode"
         }
       }
     }

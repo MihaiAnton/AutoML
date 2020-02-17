@@ -2,8 +2,9 @@ from pandas import DataFrame, get_dummies
 import pandas as pd
 import numpy as np
 
-from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
+from ..FeatureMapping import Mapper
 from sklearn import preprocessing as pp
+from ...Exceptions.dataProcessorException import DataEngineeringException
 
 import spacy
 from nltk import word_tokenize
@@ -13,8 +14,7 @@ from nltk.stem import WordNetLemmatizer
 class Engineer:
     """
         Class responsible with feature engineering.
-        Handles numeric and categorical features ( textual to be added )
-
+        Handles continuous and categorical features, both numeric and textual
     """
 
     def __init__(self, config={}):
@@ -55,13 +55,12 @@ class Engineer:
                     col_type = column_type.get(column, 'undefined')
                     interm_data = self._process_numeric(data.loc[:,[column]], column, col_type)
 
-                elif dtype in self._textual_dtypes:
+                elif str(dtype) in self._textual_dtypes:
                     col_type = column_type.get(column, 'undefined')
                     interm_data = self._process_text(data.loc[:,[column]], column, col_type)
 
                 else:
-                    # TODO raise not known data type exception
-                    pass
+                    raise DataEngineeringException("Unknown column type {}".format(str(dtype)))
 
             if not (interm_data is None):
                 modified_data = pd.concat([modified_data, interm_data], axis=1)  # add the modified data to the new dataframe
@@ -106,7 +105,13 @@ class Engineer:
         :param column_name: string representing the column name
         :return:
         """
-        column_meta_data = {"distribution":"continuous", "data_type":"numeric", "name": column_name}
+        column_meta_data = {"distribution": "continuous", "data_type": "numeric", "name": column_name}
+
+        if self._config.get("CONTINUOUS_DATA_CONFIG", {}).get("NUMERIC", {}).get("NOT_PROCESS", False): #explicitly marked to not be processed
+            column_meta_data["not_process"] = True
+            self._mapper.set(column_name, column_meta_data)
+            return data
+
 
         # 1. Capping outliers
         stdev_from_mean = self._config.get("CONTINUOUS_DATA_CONFIG", {}).get("NUMERIC",{}).get("OUTLIER_STDEV_FROM_MEAN", 3)
@@ -172,8 +177,14 @@ class Engineer:
         """
         column_meta_data = {"distribution":"discrete", "data_type":"numeric", "name": column_name}
 
-        data = get_dummies(data, prefix=column_name, columns=[column_name])
-        column_meta_data['onehotencoded_names'] = data.columns.to_list()
+        if self._config.get("CATEGORICAL_DATA_CONFIG", {}).get("NUMERIC", {}).get("NOT_PROCESS", False): #explicitly marked to not be processed
+            column_meta_data["not_process"] = True
+            self._mapper.set(column_name, column_meta_data)
+            return data
+        if self._config.get("CATEGORICAL_DATA_CONFIG", {}).get("NUMERIC", {}).get("METHOD", "one_hot_encode") == 'one_hot_encode':
+            column_meta_data["method"] = "one_hot_encode"
+            data = get_dummies(data, prefix=column_name, columns=[column_name])
+            column_meta_data['onehotencoded_names'] = data.columns.to_list()
 
         self._mapper.set(column_name, column_meta_data)
         return data
@@ -217,8 +228,15 @@ class Engineer:
         """
         column_meta_data = {"distribution":"discrete", "data_type":"text", "name": column_name}
 
-        data = get_dummies(data, prefix=column_name, columns=[column_name])
-        column_meta_data['onehotencoded_names'] = data.columns.to_list()
+        if self._config.get("CATEGORICAL_DATA_CONFIG", {}).get("TEXTUAL", {}).get("NOT_PROCESS", False): #explicitly marked to not be processed
+            column_meta_data["not_process"] = True
+            self._mapper.set(column_name, column_meta_data)
+            return data
+
+        if self._config.get("CATEGORICAL_DATA_CONFIG", {}).get("TEXTUAL", {}).get("METHOD", "one_hot_encode") == 'one_hot_encode':
+            column_meta_data["method"] = "one_hot_encode"
+            data = get_dummies(data, prefix=column_name, columns=[column_name])
+            column_meta_data['onehotencoded_names'] = data.columns.to_list()
 
         self._mapper.set(column_name, column_meta_data)
         return data
@@ -235,6 +253,11 @@ class Engineer:
         :return: DataFrame with the embedding
         """
         column_meta_data = {"distribution": "continuous", "data_type": "text", "name": column_name}
+
+        if self._config.get("CONTINUOUS_DATA_CONFIG", {}).get("TEXTUAL", {}).get("NOT_PROCESS", False): #explicitly marked to not be processed
+            column_meta_data["not_process"] = True
+            self._mapper.set(column_name, column_meta_data)
+            return data
 
         #determine the set of values across al the columns and their frequencies
         word_frequency = {}         #the frequency of every token
@@ -308,9 +331,18 @@ class Engineer:
     def _determine_cont_discrete(self, data, column_name):
         """
             Determines heuristically if the data withing the DataFrames is continuous or discrete
+            If column explicitly marked as continuous or discrete, it will be considered as specified
         :param data: DataFrame containing the data to analyse
         :return: string 'continuous' or 'discrete' depending on the result
         """
+        # 1. Check if the column was marked explicitly as continuous or discrete
+        if column_name in self._config.get("CONTINUOUS_FEATURES",[]):
+            return 'continuous'
+        elif column_name in self._config.get("CATEGORICAL_FEATURES",[]):
+            return 'discrete'
+
+
+        # 2. If not explicitly marked, determine heuristically
         categorical_threshold = self._config.get("CATEGORICAL_THRESHOLD",0)
         ratio = 1. * data[column_name].nunique() / data[column_name].count()
 

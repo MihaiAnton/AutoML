@@ -1,5 +1,5 @@
 from pandas import DataFrame
-
+from ...Exceptions.dataProcessorException import DataSplittingException
 
 class Splitter:
     """
@@ -13,16 +13,15 @@ class Splitter:
         :param data: dataframe with the dataset
         :param y_column: the name of the predicted column
         :return: tuple like (X,Y), where both are dataframes | None on error
-        :exception: TODO add exception
+        :exception: DataSplittingException
         """
         if y_column in data.columns:
             Y = data[[y_column]]
             X_cols = data.columns.tolist()
-            X_cols.remove(y_column)         #removeing the y columns from the x subset
+            X_cols.remove(y_column)         #removing the y columns from the x subset
             X = data[X_cols]
             return X,Y
         else:
-            #TODO raise exception
-            return None
+            raise DataSplittingException("Cannot split after non-existing Y column {}".format(y_column))
 
 

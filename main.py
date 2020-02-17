@@ -8,4 +8,5 @@ data = read_csv("Datasets/titanic.csv")
 
 pipeline = Pipeline()
 result = pipeline.fit(data)
+pipeline.save_processor("processor.json")
 print(result)
