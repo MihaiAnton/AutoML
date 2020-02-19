@@ -41,13 +41,14 @@ class Engineer:
         # iterate through each column and process it according to it's type
         modified_data = DataFrame()
         data_types = data.dtypes
+        not_processed = []
 
         for column in data.columns:
             print("Engineer: process column {}.".format(column))
             dtype = data_types[column]
 
             interm_data = None
-            not_processed = []
+
             if column in self._config.get("DO_NOT_PROCESS", []):
                 interm_data = data[[column]]
                 not_processed.append(column)
@@ -67,7 +68,7 @@ class Engineer:
                 modified_data = pd.concat([modified_data, interm_data],
                                           axis=1)  # add the modified data to the new dataframe
 
-        mapper.set("NOT_PROCESSED", not_processed)
+        self._mapper.set("NOT_PROCESSED", not_processed)
         mapper.set_mapper(self._mapper)
         return modified_data
 
@@ -262,6 +263,10 @@ class Engineer:
             self._mapper.set(column_name, column_meta_data)
             return data
 
+        #fill nan's
+        data = data[[column_name]].fillna("")
+        column_meta_data['default_value'] = ""
+
         # determine the set of values across al the columns and their frequencies
         word_frequency = {}  # the frequency of every token
         word_occurence = {}  # at which lines is each token located
@@ -318,6 +323,9 @@ class Engineer:
         """
         # self._nlp = spacy.load('en', disable=['parser', 'ner'])
         # self._wordnet_lemmatizer = WordNetLemmatizer()
+        if sentence == "nan":
+            return []
+
         if nlp is None:
             nlp = self._nlp
 
@@ -426,6 +434,8 @@ class Engineer:
                 data = new_data
 
         else:   #continuous
+            data = data[[info.get("name")]].fillna(info.get("default_value",""))
+
             nlp = spacy.load('en', disable=['parser', 'ner'])
             word_delimiter = info.get('word_delimiter')
             columns = info.get("column_names")

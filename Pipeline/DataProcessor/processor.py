@@ -15,19 +15,36 @@ class Processor:
         Unless a configuration is passed as an argument the default one is used.
     """
 
-    def __init__(self, config=None, file=None):
+    def __init__(self, config=None, file=None, data=None):
         """
             Inits the data processor with the configuration parsed from the json file
+            Usage: pass a mapper dictionary and the processor will init itself from that
+                   otherwise, pass the configuration dictionary and, optionally, a file with the saved mapper
         :param config: configuration dictionary that contains the logic of processing data
-        """
-        if file is None:
-            self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
-        else:
-            self._mapper = Mapper("Processor", file=file)
 
-        if config is None:
-            config = self._mapper.get("PROCESSOR_CONFIG",{})
-        self._config = config
+        """
+        if data is None:
+            if file is None:
+                self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
+            else:
+                self._mapper = Mapper("Processor", file=file)
+
+            if config is None:
+                config = self._mapper.get("PROCESSOR_CONFIG",{})
+            self._config = config
+
+        else:
+            if config is None:
+                config = {}
+            self._mapper = Mapper("Processor", dictionary=data)
+            self._config = self._mapper.get("PROCESSOR_CONFIG",config)
+
+    def get_data(self)->dict:
+        """
+            Returns the mapper dictionary, for file saving purposes
+        :return: dict
+        """
+        return self._mapper.get_map()
 
 
     def process(self, data: DataFrame):
@@ -63,6 +80,7 @@ class Processor:
         # 3. Feature engineering
         if self._config.get("FEATURE_ENGINEERING", False):  #feature engineering set to be done
             self._mapper.set("FEATURE_ENGINEERING", True)
+
             engineer = Engineer(self._config.get("FEATURE_ENGINEERING_CONFIG", {}))
             X = engineer.process(X, self._mapper,{})
 

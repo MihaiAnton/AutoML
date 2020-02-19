@@ -6,7 +6,8 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
-      "COLUMNS_TO_REMOVE": ["PassengerId"],
+      "COLUMNS_TO_REMOVE": [],
+      "DO_NOT_REMOVE": ["Cabin"],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
       "ROW_REMOVAL_THRESHOLD": 0.6,
@@ -20,7 +21,7 @@
 
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
-      "DO_NOT_PROCESS": [],
+      "DO_NOT_PROCESS": ["PassengerId"],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
 
@@ -30,11 +31,11 @@
           "NOT_PROCESS": false,
           "OUTLIER_STDEV_FROM_MEAN": 3,
           "NORMALIZATION_METHOD": "z_score",
-          "POLYNOMIAL_FEATURES": 3
+          "POLYNOMIAL_FEATURES": 4
         },
         "TEXTUAL": {
           "WORD_DELIMITERS": "?!|/.,:;'-={}[]()",
-          "MAX_GENERATED_FEATURES": 5
+          "MAX_GENERATED_FEATURES": 6
         }
       },
 

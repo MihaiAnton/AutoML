@@ -24,7 +24,7 @@ class Cleaner:
         #remove cols which are explicitly set to be removed
         cols_to_remove = self._config.get('COLUMNS_TO_REMOVE', [])
         for column in cols_to_remove:
-            if column in data.columns:
+            if column in data.columns and not (column in self._config.get("DO_NOT_REMOVE",[])):
                 cols_to_drop.append(column)
                 data.drop(column, axis=1, inplace=True)
 
@@ -39,6 +39,13 @@ class Cleaner:
             row_count = len(data.index)
             remove_threshold = float(self._config.get('COLUMN_REMOVAL_THRESHOLD', 1))
             cols_to_drop_null = data.columns[data.isna().sum()>=row_count*remove_threshold].tolist()
+            cols_to_drop_null_valid = []
+
+            for col in cols_to_drop_null:
+                if not (col in self._config.get("DO_NOT_REMOVE", [])):
+                    cols_to_drop_null_valid.append(col)
+
+            cols_to_drop_null = cols_to_drop_null_valid
             cols_to_drop = cols_to_drop + cols_to_drop_null
 
             data = data.drop(cols_to_drop_null, axis=1)
