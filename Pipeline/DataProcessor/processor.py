@@ -1,12 +1,14 @@
-from pandas import DataFrame
+import pandas as pd
+from pandas import DataFrame, get_dummies
 from pandas import concat
-
+import numpy as np
 
 from .DataCleaning import Cleaner
 from .DataSplitting import Splitter
 from .FeatureEngineering import Engineer
 from .FeatureMapping import Mapper
 from ..Exceptions.dataProcessorException import DataProcessorException
+
 
 class Processor:
     """
@@ -25,27 +27,26 @@ class Processor:
         """
         if data is None:
             if file is None:
-                self._mapper = Mapper("Processor")          #maps the changes in the raw data, for future prediction tasks
+                self._mapper = Mapper("Processor")  # maps the changes in the raw data, for future prediction tasks
             else:
                 self._mapper = Mapper("Processor", file=file)
 
             if config is None:
-                config = self._mapper.get("PROCESSOR_CONFIG",{})
+                config = self._mapper.get("PROCESSOR_CONFIG", {})
             self._config = config
 
         else:
             if config is None:
                 config = {}
             self._mapper = Mapper("Processor", dictionary=data)
-            self._config = self._mapper.get("PROCESSOR_CONFIG",config)
+            self._config = self._mapper.get("PROCESSOR_CONFIG", config)
 
-    def get_data(self)->dict:
+    def get_data(self) -> dict:
         """
             Returns the mapper dictionary, for file saving purposes
         :return: dict
         """
         return self._mapper.get_map()
-
 
     def process(self, data: DataFrame):
         """
@@ -56,39 +57,67 @@ class Processor:
         :exception: DataProcessorException
         """
 
-        if self._config.get("NO_PROCESSING",True):      #no processing configured in the configuration file
-            self._mapper.set("NO_PROCESSING",True)
+        if self._config.get("NO_PROCESSING", True):  # no processing configured in the configuration file
+            self._mapper.set("NO_PROCESSING", True)
             return data
 
         ## go over all the steps in the data processing pipeline
 
         # 1. Data cleaning
-        if self._config.get("DATA_CLEANING", False):    #data cleaning set to be done
-            self._mapper.set("DATA_CLEANING",True)
+        if self._config.get("DATA_CLEANING", False):  # data cleaning set to be done
+            self._mapper.set("DATA_CLEANING", True)
             cleaner = Cleaner(self._config.get("DATA_CLEANING_CONFIG", {}))
             y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
             data = cleaner.clean(data, self._mapper, y_column)
 
         # 2. Data splitting
         y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
+        self._mapper.set("Y_COLUMN_NAME",y_column)
         result = Splitter.XYsplit(data, y_column)
         if result is None:
             raise DataProcessorException("Expected (X,Y) tuple of DataFrames from XYsplit but got None instead")
 
-        X,Y = result        #init the X and Y variables
+        X, Y = result  # init the X and Y variables
 
         # 3. Feature engineering
-        if self._config.get("FEATURE_ENGINEERING", False):  #feature engineering set to be done
+        if self._config.get("FEATURE_ENGINEERING", False):  # feature engineering set to be done
             self._mapper.set("FEATURE_ENGINEERING", True)
 
             engineer = Engineer(self._config.get("FEATURE_ENGINEERING_CONFIG", {}))
-            X = engineer.process(X, self._mapper,{})
+            X = engineer.process(X, self._mapper, {})
 
         # 4. Retrieve mappings
         # mappings are already in the mapper field, which would be saved to file as soon as the save_processor is called
 
-        # 5. Create the output
+        # 5. Process Y column: if it is categorical and it is set to be processed, one_hot_encode it
+        Y = self._process_Y_column(Y, self._config.get('PREDICTED_COLUMN_NAME', None))
+
+        # 6. Create the output
         data = concat([X, Y], axis=1)
+
+        return data
+
+    def _process_Y_column(self, data, column_name):
+        """
+            Processes Y column only if it is categorical and if it set to do so
+        :param data: DataFrame containing the predicted column
+        :return:
+        """
+        self._mapper.set("PROCESSED_Y", False)
+        if self._config.get("FEATURE_ENGINEERING_CONFIG",{}).get("PROCESS_CATEGORICAL_PREDICTED_COLUMN", False):
+            categorical_threshold = self._config.get("FEATURE_ENGINEERING_CONFIG", {}).get("CATEGORICAL_THRESHOLD", 0)
+            ratio = 1. * data[column_name].nunique() / data[column_name].count()
+
+            distribution = None
+            if ratio < categorical_threshold:
+                distribution = 'discrete'
+            else:
+                distribution = 'continuous'
+
+            if distribution == 'discrete':
+                self._mapper.set("PROCESSED_Y",True)
+                data = get_dummies(data, prefix=column_name, columns=[column_name])
+                self._mapper.set('Y_NEW_NAMES', data.columns.to_list())
 
         return data
 
@@ -108,14 +137,48 @@ class Processor:
         if self._mapper.get("DATA_CLEANING", False):  # data cleaning set to be done
             data = Cleaner.convert(data, self._mapper)
 
-        # 2. Feature engineering
+        # 2. if the y column is present, split after it
+        split = False
+        y_column = self._mapper.get("Y_COLUMN_NAME","")
+        if y_column in data.columns:
+            split = True
+
+            result = Splitter.XYsplit(data, y_column)
+            if result is None:
+                raise DataProcessorException("Expected (X,Y) tuple of DataFrames from XYsplit but got None instead")
+
+            data, Y = result  # init the X and Y variables
+
+        # 3. Feature engineering
         if self._mapper.get("FEATURE_ENGINEERING", False):  # feature engineering set to be done
             data = Engineer.convert(data, self._mapper)
 
+        # 4. Process y column
+        if split:
+            Y = self._convert_Y_column(Y, y_column)
+            data = concat([data,Y], axis=1)
+
         return data
 
+    def _convert_Y_column(self, data:DataFrame, y_column:str)->DataFrame:
+        """
+            Converts the y column as specified in the mapper
+        :param data: DataFrame containing the y column
+        :param y_column: string with the column name
+        :return: DataFrame with the converted data
+        """
+        if self._mapper.get("PROCESSED_Y", False):
+            new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=self._mapper.get("Y_NEW_NAMES"))
+            for i, r in data[[y_column]].iterrows():
+                # print(str(info.get("name") + "_" + str(r[0])))
+                if str(y_column + "_" + str(r[0])) in new_data.columns:
+                    new_data.iloc[i][str(y_column + "_" + str(r[0]))] = 1
 
-    def save_processor(self, file: str):
+            data = new_data
+
+        return data
+
+    def save_processor(self, file: str)->None:
         """
             Saves the processor logic to disc.
         :param file: text file for saving the data
@@ -129,39 +192,12 @@ class Processor:
             raise DataProcessorException("Error while saving processor to file {}.".format(file))
 
     @staticmethod
-    def load_processor(file:str):
+    def load_processor(file: str):
         """
 
         :param file: the file where a processor has been previously saved with the save_processor method
         :return: the instance of a processor class with the logic within the file
         :exception:
         """
-        #the file contains the mapper, and withing the mapper it already exists a configuration
-        return Processor(file = file)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # the file contains the mapper, and withing the mapper it already exists a configuration
+        return Processor(file=file)

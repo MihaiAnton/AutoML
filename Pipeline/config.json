@@ -7,7 +7,7 @@
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
       "COLUMNS_TO_REMOVE": [],
-      "DO_NOT_REMOVE": ["Cabin"],
+      "DO_NOT_REMOVE": [],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
       "ROW_REMOVAL_THRESHOLD": 0.6,
@@ -16,12 +16,13 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "PREDICTED_COLUMN_NAME": "Species",
 
 
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
-      "DO_NOT_PROCESS": ["PassengerId"],
+      "PROCESS_CATEGORICAL_PREDICTED_COLUMN": true,
+      "DO_NOT_PROCESS": ["Id"],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
 
