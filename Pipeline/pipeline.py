@@ -1,6 +1,6 @@
 import json
 import os
-
+import time
 from pandas import DataFrame
 
 from Pipeline.DataProcessor.processor import Processor
@@ -44,11 +44,16 @@ class Pipeline:
         :param data: DataFrame containing the raw data that has to be transformed
         :return: DataFrame with the omdified data
         """
+        start = time.time()
+
         result = data
         # Iterating over the pipeline steps
         # 1. Data processing
         if self._config.get("DATA_PROCESSING", False):
             result = self._processor.process(result)
+
+        end = time.time()
+        print("Processed in {} seconds.".format(end-start))
         return result
 
     def convert(self, data: DataFrame):
@@ -58,12 +63,18 @@ class Pipeline:
         :return: DataFrame containing the converted data
         :exception: PipelineException
         """
+        start = time.time()
+
+        result = data
         if self._processor is None:
             if self._mapper_file is None:
                 raise PipelineException(
                     "Mapper file not set. In order to convert data, provide a mapper file to the constructor.")
             self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), self._mapper_file)
-        return self._processor.convert(data)
+        result = self._processor.convert(data)
+        end = time.time()
+        print("Converted in {} seconds.".format(end - start))
+        return result
 
     def fit(self, data: DataFrame):
         """

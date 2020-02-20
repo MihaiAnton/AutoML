@@ -16,7 +16,7 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "Species",
+    "PREDICTED_COLUMN_NAME": "SalePrice",
 
 
     "FEATURE_ENGINEERING": true,
@@ -30,13 +30,13 @@
       "CONTINUOUS_DATA_CONFIG": {
         "NUMERIC": {
           "NOT_PROCESS": false,
-          "OUTLIER_STDEV_FROM_MEAN": 3,
+          "OUTLIER_STDEV_FROM_MEAN": 5,
           "NORMALIZATION_METHOD": "z_score",
-          "POLYNOMIAL_FEATURES": 4
+          "POLYNOMIAL_FEATURES": 3
         },
         "TEXTUAL": {
           "WORD_DELIMITERS": "?!|/.,:;'-={}[]()",
-          "MAX_GENERATED_FEATURES": 6
+          "MAX_GENERATED_FEATURES": 3
         }
       },
 

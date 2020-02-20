@@ -391,6 +391,7 @@ class Engineer:
         processed_data = DataFrame()
 
         for column in data.columns:
+            print("Engineer: convert column {}.".format(column))
             interm_data = None
             if column in mapper.get("NOT_PROCESSED", []):
                 interm_data = data[[column]]
