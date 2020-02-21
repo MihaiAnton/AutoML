@@ -16,10 +16,16 @@ class Pipeline:
             2. #TODO complete with other modules
     """
 
-    def __init__(self, config=None, mapper_file=None, data=None):
+    def __init__(self, config:dict=None, mapper_file:str=None, data:dict=None):
         """
             Inits the pipeline
         :param config: configuration dictionary
+        :param mapper_file: the file where the mapper is saved, if existing
+        :param data:the dictionary containing the data previously saved by the Pipeline instance
+        Usage:
+            if provided any data, the Pipeline will init itself from that dictionary
+            otherwise, if provided a config it will use that, if not it will try to read the config from file
+                       if a mapper file is provided the processor will be initialized with that
         """
         if data is None:                #initialized by the user
             self._processor = None
@@ -33,16 +39,16 @@ class Pipeline:
                 self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), file=mapper_file)
 
         else:                           #initialized by the load_pipeline method
-            self._config = data["CONFIG"]
-            self._processor = Processor(self._config,data=data["PROCESSOR_DATA"])
+            self._config = data.get("CONFIG",{})
+            self._processor = Processor(self._config,data=data.get("PROCESSOR_DATA",{}))
 
 
 
-    def process(self, data: DataFrame):
+    def process(self, data: DataFrame)->DataFrame:
         """
             Processes the data according to the configuration in the config file
         :param data: DataFrame containing the raw data that has to be transformed
-        :return: DataFrame with the omdified data
+        :return: DataFrame with the modified data
         """
         start = time.time()
 
@@ -56,7 +62,7 @@ class Pipeline:
         print("Processed in {} seconds.".format(end-start))
         return result
 
-    def convert(self, data: DataFrame):
+    def convert(self, data: DataFrame)->DataFrame:
         """
             Converts the data to the representation previously learned by the DataProcessor
         :param data: DataFrame containing data similar to what the
@@ -95,18 +101,18 @@ class Pipeline:
 
         return result
 
-    def save(self, file):
+    def save(self, file:str)->'Pipeline':
         """
             Saves the pipeline logic to the specified file for further reusage.
         :return: None
         """
         processor_data = self._processor.get_data()
 
-
-        data = {
-            "CONFIG":self._config,
-            "PROCESSOR_DATA":processor_data
+        data = {                                    #the data format here should match the constructor
+            "CONFIG":self._config,                      # because it will try to reconstruct the Pipeline
+            "PROCESSOR_DATA":processor_data             # provided this configuration
         }
+
         with open(file, 'w') as f:
             json.dump(data, f)
         return self
@@ -123,7 +129,7 @@ class Pipeline:
             return Pipeline(data=data)
 
     @staticmethod
-    def _read_config_file():
+    def _read_config_file()->dict:
         with open(os.getcwd() + '\Pipeline\config.json') as json_file:
             data = json.load(json_file)
         return data

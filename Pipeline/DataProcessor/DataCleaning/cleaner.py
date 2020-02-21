@@ -7,7 +7,7 @@ class Cleaner:
         self._config = config
         self._mapper = Mapper("Cleaner")
 
-    def clean(self, data: DataFrame, mapper: 'Mapper', predicted_col=None):
+    def clean(self, data: DataFrame, mapper: 'Mapper', predicted_col:str=None)->DataFrame:
         """
             Cleans the data by removing rows/columns where necessary.
         :param predicted_col: which is the column name that we want to predict
@@ -64,7 +64,7 @@ class Cleaner:
 
 
     @staticmethod
-    def convert(data:DataFrame, mapper: 'Mapper'):
+    def convert(data:DataFrame, mapper: 'Mapper')->DataFrame:
         """
             Based on the mapping determined in the clean method, it cleans the input data accordingly.
         :param mapper: mapper class instance that holds all the changes that have to be done to the dataset

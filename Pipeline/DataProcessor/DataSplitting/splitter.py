@@ -7,7 +7,7 @@ class Splitter:
     """
 
     @staticmethod
-    def XYsplit(data:DataFrame, y_column):
+    def XYsplit(data:DataFrame, y_column:str)->(DataFrame,DataFrame):
         """
             Splits the data in X and Y.
         :param data: dataframe with the dataset

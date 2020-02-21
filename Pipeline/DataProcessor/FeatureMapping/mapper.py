@@ -1,5 +1,5 @@
 import json
-
+from ...Exceptions import MapperException
 
 class Mapper:
     """
@@ -18,7 +18,7 @@ class Mapper:
             in order to correctly transform the data.
     """
 
-    def __init__(self, name, file=None, dictionary=None):
+    def __init__(self, name:str, file:str=None, dictionary:dict=None):
         """
             Receives a dictionary of mappings that contains changes from the raw data to the processed data.
         :param file: path to file; if not None the mapper inits itself from a file
@@ -36,21 +36,21 @@ class Mapper:
             if file:
                 self._init_from_file(file)
 
-    def get_name(self):
+    def get_name(self)->str:
         """
             Returns the name of the mapper
         :return: name:str
         """
         return self._name
 
-    def _get_fields(self):
+    def _get_fields(self)->dict:
         """
             Get the fields dictionary of the current mapper
         :return: reference to fields map
         """
         return self._map.get("FIELDS",{})
 
-    def _get_recurrent_mappers(self):
+    def _get_recurrent_mappers(self)->dict:
         """
             Get the recurrent mappers' dictionary that this map holds
         :return: reference to recurrent mappers' map
@@ -71,19 +71,20 @@ class Mapper:
     def get(self, key, default=None):
         """
             Gets the value of a key
+        :param default: the default value the method will return if there is no key mapped
         :param key: the key to search for
-        :return: the value of the key or None if the key does not exist
+        :return: the value of the key or default if the key does not exist
         """
         return self._get_fields().get(key, default)
 
-    def get_map(self):
+    def get_map(self)->dict:
         """
             Return the raw map
         :return: map
         """
         return self._map
 
-    def get_mapper(self, name: str):
+    def get_mapper(self, name: str)->'Mapper':
         """
             Returns the mapper with the given name
         :param name: the name of the mapper, as saved previously
@@ -94,7 +95,7 @@ class Mapper:
             return None
         return Mapper(name, dictionary=submap)
 
-    def set_mapper(self, mapper: 'Mapper'):
+    def set_mapper(self, mapper: 'Mapper')->'Mapper':
         """
             Sets the dictionary of a mapper within the recurring mappers field.
             If a dictionary with the same name exists it will be overwritten.
@@ -105,19 +106,24 @@ class Mapper:
         return self
 
 
-    def _init_from_file(self, file):
+    def _init_from_file(self, file:str)->'Mapper':
         """
             Inits the mapper from a configuration previously saved to file
         :param file: file to load the mapper from
         :return: mapper
+        :exception MapperException
         """
-        with open(file) as f:
-            data = json.load(f)
-            self._map = data
-        return self
+        try:
+            with open(file) as f:
+                data = json.load(f)
+                self._map = data
+            return self
+        except Exception as e:
+            raise MapperException("Could not init from file {}.".format(file))
 
 
-    def save_to_file(self, file):
+
+    def save_to_file(self, file:str)->'Mapper':
         """
             Saves the mapper to file
         :param file: path to save file

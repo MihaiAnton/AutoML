@@ -17,7 +17,7 @@ class Engineer:
         Handles continuous and categorical features, both numeric and textual
     """
 
-    def __init__(self, config={}):
+    def __init__(self, config:dict={}):
         self._config = config
         self._mapper = Mapper("Engineer")
         self._numeric_dtypes = ["float64", "int64", "bool", "float32", "int32", "int8", "float8"]
@@ -27,7 +27,7 @@ class Engineer:
         self._nlp = spacy.load('en', disable=['parser', 'ner'])
         # self._wordnet_lemmatizer = WordNetLemmatizer()
 
-    def process(self, data: DataFrame, mapper: 'Mapper', column_type={}):
+    def process(self, data: DataFrame, mapper: 'Mapper', column_type:str={})->DataFrame:
         """
             Processes the dataset in a way that a learning algorithms can benefit more from it.
             Does outlier detection, feature engineering, data normalization/standardization, missing value filling, polynomial features and more.
@@ -73,7 +73,7 @@ class Engineer:
         return modified_data
 
     #################################################   Numeric processing    #################################################
-    def _process_numeric(self, data, column_name, column_type):
+    def _process_numeric(self, data:DataFrame, column_name:str, column_type:str)->DataFrame:
         """
             Processes a numeric column; Does nan replacing and feature engineering as specified in the config file.
         :param data: DataFrame containing the column to process
@@ -94,7 +94,7 @@ class Engineer:
 
         return result
 
-    def _process_numeric_continuous(self, data, column_name):
+    def _process_numeric_continuous(self, data:DataFrame, column_name:str)->DataFrame:
         """
             Processes a numeric column which is known to have a continuous values distribution.
             1. Capping outliers which are more/less than x/-x standard deviations from the mean (x from config file)
@@ -171,7 +171,7 @@ class Engineer:
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    def _process_numeric_discrete(self, data, column_name):
+    def _process_numeric_discrete(self, data:DataFrame, column_name:str)->DataFrame:
         """
             Processes a numeric column which is known to have a discrete values distribution.
             Applies one hot encoding and returns the result.
@@ -198,7 +198,7 @@ class Engineer:
     ###########################################################################################################################
 
     #################################################   Text processing    #################################################
-    def _process_text(self, data, column_name, column_type):
+    def _process_text(self, data:DataFrame, column_name:str, column_type:str)->DataFrame:
         """
             Processes a text column; Does nan replacing and feature engineering as specified in the config file.
         :param data: DataFrame containing the column to process
@@ -219,7 +219,7 @@ class Engineer:
 
         return result
 
-    def _process_text_discrete(self, data, column_name):
+    def _process_text_discrete(self, data:DataFrame, column_name:str)->DataFrame:
         """
             Processes a text column which is known to have a discrete values distribution.
             Applies one hot encoding and returns the result.
@@ -244,7 +244,7 @@ class Engineer:
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    def _process_text_continuous(self, data, column_name):
+    def _process_text_continuous(self, data:DataFrame, column_name:str)->DataFrame:
         """
             Processes a text column the is known to have a continuous distribution, thus
         no categorical values.
@@ -315,7 +315,7 @@ class Engineer:
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    def _get_world_cloud(self, sentence, nlp=None, separators = None):
+    def _get_world_cloud(self, sentence:str, nlp=None, separators:str=None)->list:
         """
             Converts text format to a standardized format through tokenizing and stemming.
         :param sentence: the string to be analyzed
@@ -354,7 +354,7 @@ class Engineer:
 
     ###########################################################################################################################
 
-    def _determine_cont_discrete(self, data, column_name):
+    def _determine_cont_discrete(self, data:DataFrame, column_name:str)->str:
         """
             Determines heuristically if the data withing the DataFrames is continuous or discrete
             If column explicitly marked as continuous or discrete, it will be considered as specified
@@ -379,7 +379,7 @@ class Engineer:
     #################################################   Conversion methods    #################################################
 
     @staticmethod
-    def convert(data: DataFrame, mapper: 'Mapper'):
+    def convert(data: DataFrame, mapper: 'Mapper')->DataFrame:
         """
             Converts new data to a format previously mapped into 'mapper'
         :param data: DataFrame with data to be transformed
@@ -413,7 +413,7 @@ class Engineer:
 
 
     @staticmethod
-    def _convert_text(data:DataFrame, info:dict):
+    def _convert_text(data:DataFrame, info:dict)->DataFrame:
         """
             Converts textual data as specified in the info dictionary
         :param data:
@@ -455,7 +455,7 @@ class Engineer:
 
 
     @staticmethod
-    def _convert_numeric(data: DataFrame, info:dict):
+    def _convert_numeric(data: DataFrame, info:dict)->DataFrame:
         """
             Convert numeric features as specified in the info dictionary
         :param info:

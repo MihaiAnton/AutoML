@@ -17,13 +17,14 @@ class Processor:
         Unless a configuration is passed as an argument the default one is used.
     """
 
-    def __init__(self, config=None, file=None, data=None):
+    def __init__(self, config:dict=None, file:str=None, data:dict=None):
         """
             Inits the data processor with the configuration parsed from the json file
             Usage: pass a mapper dictionary and the processor will init itself from that
                    otherwise, pass the configuration dictionary and, optionally, a file with the saved mapper
         :param config: configuration dictionary that contains the logic of processing data
-
+        :param file: the file where the processor mapper has been previously saved
+        :param data: the mapper data already parsed into a dictionary
         """
         if data is None:
             if file is None:
@@ -48,7 +49,7 @@ class Processor:
         """
         return self._mapper.get_map()
 
-    def process(self, data: DataFrame):
+    def process(self, data: DataFrame)->DataFrame:
         """
             Completes the whole cycle of automated feature engineering.
             Received raw data and returns data ready to be fed into the next step of the pipeline or into a learning algorithm.
@@ -97,7 +98,7 @@ class Processor:
 
         return data
 
-    def _process_Y_column(self, data, column_name):
+    def _process_Y_column(self, data:DataFrame, column_name:str)->DataFrame:
         """
             Processes Y column only if it is categorical and if it set to do so
         :param data: DataFrame containing the predicted column
@@ -121,7 +122,7 @@ class Processor:
 
         return data
 
-    def convert(self, data: DataFrame):
+    def convert(self, data: DataFrame)->DataFrame:
         """
             Converts data to a format previously determined by the process method.
             Used after data processing for further predictions.
@@ -192,7 +193,7 @@ class Processor:
             raise DataProcessorException("Error while saving processor to file {}.".format(file))
 
     @staticmethod
-    def load_processor(file: str):
+    def load_processor(file: str)->'Processor':
         """
 
         :param file: the file where a processor has been previously saved with the save_processor method
