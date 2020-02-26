@@ -84,25 +84,27 @@ class Mapper:
         """
         return self._map
 
-    def get_mapper(self, name: str)->'Mapper':
+    def get_mapper(self, name: str, default:dict={})->'Mapper':
         """
             Returns the mapper with the given name
+        :param default: the default value in case the searched mapper is not found
         :param name: the name of the mapper, as saved previously
         :return: mapper instance
         """
-        submap = self._get_recurrent_mappers().get(name, None)
-        if submap is None:
-            return None
+        submap = self._get_recurrent_mappers().get(name, default)
         return Mapper(name, dictionary=submap)
 
-    def set_mapper(self, mapper: 'Mapper')->'Mapper':
+    def set_mapper(self, mapper: 'Mapper', name:str=None)->'Mapper':
         """
             Sets the dictionary of a mapper within the recurring mappers field.
             If a dictionary with the same name exists it will be overwritten.
+        :param name: the name of the saved mapper
         :param mapper: the mapper to add
         :return: the current mapper
         """
-        self._get_recurrent_mappers()[mapper.get_name()] = mapper.get_map()
+        if name is None:
+            name = mapper.get_name()
+        self._get_recurrent_mappers()[name] = mapper.get_map()
         return self
 
 

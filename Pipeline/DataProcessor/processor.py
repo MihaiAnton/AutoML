@@ -17,7 +17,7 @@ class Processor:
         Unless a configuration is passed as an argument the default one is used.
     """
 
-    def __init__(self, config:dict=None, file:str=None, data:dict=None):
+    def __init__(self, config:dict=None, file:str=None, data:'Mapper'=None):
         """
             Inits the data processor with the configuration parsed from the json file
             Usage: pass a mapper dictionary and the processor will init itself from that
@@ -39,7 +39,7 @@ class Processor:
         else:
             if config is None:
                 config = {}
-            self._mapper = Mapper("Processor", dictionary=data)
+            self._mapper = Mapper("Processor", dictionary=data.get_map())
             self._config = self._mapper.get("PROCESSOR_CONFIG", config)
 
     def get_data(self) -> dict:
@@ -48,6 +48,13 @@ class Processor:
         :return: dict
         """
         return self._mapper.get_map()
+
+    def get_mapper(self) -> 'Mapper':
+        """
+            Returns the mapper for saving purposes.
+        :return: Mapper
+        """
+        return self._mapper
 
     def process(self, data: DataFrame)->DataFrame:
         """

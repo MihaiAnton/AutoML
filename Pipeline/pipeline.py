@@ -3,6 +3,7 @@ import os
 import time
 from pandas import DataFrame
 
+from Pipeline.DataProcessor.FeatureMapping import Mapper
 from Pipeline.DataProcessor.processor import Processor
 from .Exceptions.pipelineException import PipelineException
 
@@ -16,18 +17,18 @@ class Pipeline:
             2. #TODO complete with other modules
     """
 
-    def __init__(self, config:dict=None, mapper_file:str=None, data:dict=None):
+    def __init__(self, config:dict=None, mapper_file:str=None, mapper:'Mapper'=None):
         """
             Inits the pipeline
         :param config: configuration dictionary
         :param mapper_file: the file where the mapper is saved, if existing
-        :param data:the dictionary containing the data previously saved by the Pipeline instance
+        :param mapper:the dictionary (in Mapper format) containing the data previously saved by the Pipeline instance
         Usage:
             if provided any data, the Pipeline will init itself from that dictionary
             otherwise, if provided a config it will use that, if not it will try to read the config from file
                        if a mapper file is provided the processor will be initialized with that
         """
-        if data is None:                #initialized by the user
+        if mapper is None:                #initialized by the user
             self._processor = None
             self._mapper_file = None
 
@@ -38,9 +39,11 @@ class Pipeline:
             if self._config.get("DATA_PROCESSING", False):
                 self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), file=mapper_file)
 
+            self._mapper = Mapper("Pipeline")
+
         else:                           #initialized by the load_pipeline method
-            self._config = data.get("CONFIG",{})
-            self._processor = Processor(self._config,data=data.get("PROCESSOR_DATA",{}))
+            self._config = mapper.get("CONFIG",default={})
+            self._processor = Processor(self._config,data=mapper.get_mapper("PROCESSOR_DATA",{}))
 
 
 
@@ -106,16 +109,17 @@ class Pipeline:
             Saves the pipeline logic to the specified file for further reusage.
         :return: None
         """
-        processor_data = self._processor.get_data()
-
-        data = {                                    #the data format here should match the constructor
-            "CONFIG":self._config,                      # because it will try to reconstruct the Pipeline
-            "PROCESSOR_DATA":processor_data             # provided this configuration
-        }
-
-        with open(file, 'w') as f:
-            json.dump(data, f)
-        return self
+        self._mapper.set_mapper(self._processor.get_mapper(), "PROCESSOR_DATA")
+        self._mapper.set("CONFIG", self._config)
+        self._mapper.save_to_file(file)
+        # data = {                                    #the data format here should match the constructor
+        #     "CONFIG":self._config,                      # because it will try to reconstruct the Pipeline
+        #     "PROCESSOR_DATA":processor_data             # provided this configuration
+        # }
+        #
+        # with open(file, 'w') as f:
+        #     json.dump(data, f)
+        # return self
 
     @staticmethod
     def load_pipeline(file: str) -> 'Pipeline':
@@ -124,9 +128,8 @@ class Pipeline:
         :param file: path to the file where the pipeline was previously saved
         :return: the pipeline
         """
-        with open(file) as f:
-            data = json.load(f)
-            return Pipeline(data=data)
+        mapper = Mapper("Pipeline",file)
+        return Pipeline(mapper=mapper)
 
     @staticmethod
     def _read_config_file()->dict:

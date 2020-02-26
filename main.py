@@ -16,7 +16,7 @@ result.to_csv("Datasets/house_train_processed.csv", index=False)#write the proce
 ####################### Pipeline example 2: converting data
 
 pipeline = Pipeline.load_pipeline("pipeline_house.json")        #load a pipeline previously daved
-data = read_csv("Datasets/house_test.csv")                      #read the dataframe that needs to be converted
+data = read_csv("Datasets/house_train.csv")                      #read the dataframe that needs to be converted
 result = pipeline.convert(data)                                 #convert the data
 result.to_csv("Datasets/house_test_converted.csv", index=False) #save the conversion to file
 
