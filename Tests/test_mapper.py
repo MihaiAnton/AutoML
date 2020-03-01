@@ -1,5 +1,5 @@
 from unittest import TestCase
-from Pipeline.DataProcessor.FeatureMapping.mapper import Mapper
+from Pipeline.Mapper import Mapper
 
 class TestMapper(TestCase):
 

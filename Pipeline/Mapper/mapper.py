@@ -1,5 +1,5 @@
 import json
-from ...Exceptions import MapperException
+from Pipeline.Exceptions import MapperException
 
 class Mapper:
     """

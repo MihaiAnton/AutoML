@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from ..FeatureMapping import Mapper
+from Pipeline.Mapper import Mapper
 
 class Cleaner:
 

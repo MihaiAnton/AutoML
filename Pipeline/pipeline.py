@@ -3,7 +3,7 @@ import os
 import time
 from pandas import DataFrame
 
-from Pipeline.DataProcessor.FeatureMapping import Mapper
+from Pipeline.Mapper import Mapper
 from Pipeline.DataProcessor.processor import Processor
 from .Exceptions.pipelineException import PipelineException
 
