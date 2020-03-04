@@ -6,6 +6,9 @@ from pandas import DataFrame
 from Pipeline.Mapper import Mapper
 from Pipeline.DataProcessor.processor import Processor
 from .Exceptions.pipelineException import PipelineException
+from .Learner.Models.abstractModel import AbstractModel
+from .Learner.learner import Learner
+from .DataProcessor.DataSplitting.splitter import Splitter
 
 
 class Pipeline:
@@ -45,6 +48,8 @@ class Pipeline:
             self._config = mapper.get("CONFIG",default={})
             self._processor = Processor(self._config,data=mapper.get_mapper("PROCESSOR_DATA",{}))
 
+        self._learner = Learner(self._config.get("TRAINING_CONFIG", {}))
+
 
 
     def process(self, data: DataFrame)->DataFrame:
@@ -56,7 +61,7 @@ class Pipeline:
         start = time.time()
 
         result = data
-        # Iterating over the pipeline steps
+
         # 1. Data processing
         if self._config.get("DATA_PROCESSING", False):
             result = self._processor.process(result)
@@ -64,6 +69,30 @@ class Pipeline:
         end = time.time()
         print("Processed in {} seconds.".format(end-start))
         return result
+
+    def learn(self, data: DataFrame, y_column: str = None) -> AbstractModel:
+        """
+            Learns a model from the data.
+        :param y_column: the name of the predicted column
+        :param data: DataFrame containing the dataset to learn
+        :return: trained model or None if trained is not set to true in config
+        """
+        start = time.time()
+
+        if y_column is None:
+            y_column = self._config.get("TRAINING_CONFIG", {}).get("PREDICTED_COLUMN_NAME", "undefined")
+
+        result = None
+        #2. Model learning
+        if self._config.get("TRAINING", False):
+            X,Y = Splitter.XYsplit(data, y_column)
+
+            result = self._learner.learn(X=X, Y=Y)
+
+        end = time.time()
+        print("Learnt in {} seconds.".format(end - start))
+        return result
+
 
     def convert(self, data: DataFrame)->DataFrame:
         """
@@ -85,6 +114,9 @@ class Pipeline:
         print("Converted in {} seconds.".format(end - start))
         return result
 
+
+
+
     def fit(self, data: DataFrame):
         """
             Completes the pipeline as specified in the configuration file.
@@ -92,15 +124,12 @@ class Pipeline:
         :return: data/ cleaned data/ processed data/ trained model ( based on the choices in the config file)
         """
 
-        result = data
         # Iterating over the pipeline steps
         # 1. Data processing
         result = self.process(data)
 
-        # must be deleted later
-        # result.to_csv("Datasets/titanic_generated.csv", index=False)
-
-        # 2. #TODO
+        # 2. Learning
+        result = self.learn(result)
 
         return result
 

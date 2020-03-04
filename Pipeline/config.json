@@ -51,8 +51,44 @@
         }
       }
     }
+  },
+  "TRAINING": true,
+  "TRAINING_CONFIG": {
+    "TYPE": "default",
+    "TIME": "1h 20m",
+
+    "PREDICTED_COLUMN_NAME": "SalePrice",
+
+    "DEFAULT_MODEL": "neural_network",
+    "DEFAULT_MODEL_CONFIG": {
+      "LEARNING_RATE": 0.001,
+      "HIDDEN_LAYERS": [],
+      "ACTIVATIONS": "relu",
+      "DROPOUT": 0.1
+    },
+
+    "EVOLUTIONARY_MODEL_CONFIG": {
+      "MODELS": ["neural_network"]
+    }
   }
 
 
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
