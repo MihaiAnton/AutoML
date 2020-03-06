@@ -20,7 +20,7 @@ class Pipeline:
             2. #TODO complete with other modules
     """
 
-    def __init__(self, config:dict=None, mapper_file:str=None, mapper:'Mapper'=None):
+    def __init__(self, config: dict = None, mapper_file: str = None, mapper: 'Mapper' = None):
         """
             Inits the pipeline
         :param config: configuration dictionary
@@ -31,7 +31,7 @@ class Pipeline:
             otherwise, if provided a config it will use that, if not it will try to read the config from file
                        if a mapper file is provided the processor will be initialized with that
         """
-        if mapper is None:                #initialized by the user
+        if mapper is None:  # initialized by the user
             self._processor = None
             self._mapper_file = None
 
@@ -44,15 +44,13 @@ class Pipeline:
 
             self._mapper = Mapper("Pipeline")
 
-        else:                           #initialized by the load_pipeline method
-            self._config = mapper.get("CONFIG",default={})
-            self._processor = Processor(self._config,data=mapper.get_mapper("PROCESSOR_DATA",{}))
+        else:  # initialized by the load_pipeline method
+            self._config = mapper.get("CONFIG", default={})
+            self._processor = Processor(self._config, data=mapper.get_mapper("PROCESSOR_DATA", {}))
 
         self._learner = Learner(self._config.get("TRAINING_CONFIG", {}))
 
-
-
-    def process(self, data: DataFrame)->DataFrame:
+    def process(self, data: DataFrame) -> DataFrame:
         """
             Processes the data according to the configuration in the config file
         :param data: DataFrame containing the raw data that has to be transformed
@@ -67,7 +65,7 @@ class Pipeline:
             result = self._processor.process(result)
 
         end = time.time()
-        print("Processed in {} seconds.".format(end-start))
+        print("Processed in {} seconds.".format(end - start))
         return result
 
     def learn(self, data: DataFrame, y_column: str = None) -> AbstractModel:
@@ -83,9 +81,9 @@ class Pipeline:
             y_column = self._config.get("TRAINING_CONFIG", {}).get("PREDICTED_COLUMN_NAME", "undefined")
 
         result = None
-        #2. Model learning
+        # 2. Model learning
         if self._config.get("TRAINING", False):
-            X,Y = Splitter.XYsplit(data, y_column)
+            X, Y = Splitter.XYsplit(data, y_column)
 
             result = self._learner.learn(X=X, Y=Y)
 
@@ -93,8 +91,7 @@ class Pipeline:
         print("Learnt in {} seconds.".format(end - start))
         return result
 
-
-    def convert(self, data: DataFrame)->DataFrame:
+    def convert(self, data: DataFrame) -> DataFrame:
         """
             Converts the data to the representation previously learned by the DataProcessor
         :param data: DataFrame containing data similar to what the
@@ -114,9 +111,6 @@ class Pipeline:
         print("Converted in {} seconds.".format(end - start))
         return result
 
-
-
-
     def fit(self, data: DataFrame):
         """
             Completes the pipeline as specified in the configuration file.
@@ -133,7 +127,7 @@ class Pipeline:
 
         return result
 
-    def save(self, file:str)->'Pipeline':
+    def save(self, file: str) -> 'Pipeline':
         """
             Saves the pipeline logic to the specified file for further reusage.
         :return: None
@@ -157,11 +151,13 @@ class Pipeline:
         :param file: path to the file where the pipeline was previously saved
         :return: the pipeline
         """
-        mapper = Mapper("Pipeline",file)
+        mapper = Mapper("Pipeline", file)
         return Pipeline(mapper=mapper)
 
     @staticmethod
-    def _read_config_file()->dict:
-        with open(os.getcwd() + '\Pipeline\config.json') as json_file:
+    def _read_config_file() -> dict:
+        path = os.path.join(os.getcwd(), 'Pipeline', 'config.json')
+        # print(path)
+        with open(path) as json_file:
             data = json.load(json_file)
         return data
