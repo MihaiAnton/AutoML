@@ -52,18 +52,21 @@
       }
     }
   },
+
+
+
   "TRAINING": true,
   "TRAINING_CONFIG": {
     "TYPE": "default",
     "TIME": "1h 20m",
 
-    "PREDICTED_COLUMN_NAME": "SalePrice",
+    "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "neural_network",
     "DEFAULT_MODEL_CONFIG": {
       "LEARNING_RATE": 0.001,
-      "HIDDEN_LAYERS": [],
-      "ACTIVATIONS": "relu",
+      "HIDDEN_LAYERS": "smooth",
+      "ACTIVATIONS": "sigmoid",
       "DROPOUT": 0.1
     },
 
