@@ -3,6 +3,8 @@ from pandas import DataFrame
 from ..abstractModel import AbstractModel
 from torch import nn, optim, tensor
 from ....Exceptions.learnerException import DeepLearningModelException
+from sklearn.model_selection import train_test_split
+from random import randrange
 
 
 class ModuleList(object):
@@ -40,6 +42,12 @@ class ModuleList(object):
 class DeepLearningModel(AbstractModel):
     POSSIBLE_ACTIVATIONS = ["relu", "linear", "sigmoid"]  # TODO complete with other activations
     DEFAULT_ACTIVATION = "linear"
+    DEFAULT_BATCH_SIZE = 64
+    DEFAULT_LAYER_SIZE = 64
+    DEFAULT_DROPOUT = 0.1
+    DEFAULT_OPTIMIZER = "SGD"
+    DEFAULT_LR = 0.01
+    DEFAULT_MOMENTUM = 0.4
 
     def __init__(self, in_size, out_size, config: dict = None):
         """
@@ -61,49 +69,86 @@ class DeepLearningModel(AbstractModel):
     def predict(self, X: DataFrame) -> DataFrame:
         pass
 
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600):
+    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, validation_split: float = None):
         """
             Trains the model according to the specifications provided.
+        :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param X: the dependent variables to train with
         :param Y: the predicted variables
-        :param time: the training time
+        :param time: the training time in seconds, default 10 minutes
         :return: self (trained model)
         """
         # define an optimizer
         # should be defined in configuration - a default one will be used now for the demo
         criterion = nn.BCELoss()
-        params = self._model.parameters()
-        optimizer = optim.SGD(params, lr=0.01, momentum=0.9)
 
-        BATCH_SIZE = 64
+        requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
+        requested_lr = self._config.get("LEARNING_RATE", self.DEFAULT_LR)
+        requested_momentum = self._config.get("MOMENTUM", self.DEFAULT_MOMENTUM)
+
+        params = self._model.parameters()
+        if requested_optimizer == "SGD":
+            optimizer = optim.SGD(params, lr=requested_lr, momentum=requested_momentum)
+        elif requested_optimizer == "Adam":
+            optimizer = optim.Adam(params, lr=requested_lr)
+        else:
+            raise DeepLearningModelException("Optimizer {} not understood.".format(requested_optimizer))
+
+        batch_size = self._config.get("BATCH_SIZE", self.DEFAULT_BATCH_SIZE)
         EPOCHS = 12000
 
-        # convert the data to tensors
-        X = tensor(X.to_numpy()).float()
-        Y = tensor(Y.to_numpy()).float()
+        # create the train and validation datasets
+        if validation_split is None:
+            x_train = tensor(X.to_numpy()).float()
+            y_train = tensor(Y.to_numpy()).float()
+        else:
+            if type(validation_split) != float:
+                raise DeepLearningModelException("Parameter validation_split should be None or float in range [0,1)")
+            if validation_split < 0 or validation_split >= 1:
+                validation_split = 0.2
+                # TODO warning - validation is out of limits, using default value 0.2
+
+            x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
+                                                              random_state=randrange(2048))
+
+            x_train = tensor(x_train).float()
+            x_val = tensor(x_val).float()
+            y_train = tensor(y_train).float()
+            y_val = tensor(y_val).float()
 
         # train the model - handle time somehow
         for e in range(EPOCHS):
             running_loss = 0
             start_index = 0
 
-            while start_index < X.shape[0]:
-                batchX = X[start_index:start_index + BATCH_SIZE]
-                batchY = Y[start_index:start_index + BATCH_SIZE]
+            while start_index < x_train.shape[0]:
+                batch_x = x_train[start_index:start_index + batch_size]
+                batch_y = y_train[start_index:start_index + batch_size]
 
                 optimizer.zero_grad()
-                output = self._model(batchX)
-                loss = criterion(output, batchY)
+                output = self._model(batch_x)
+                loss = criterion(output, batch_y)
 
                 loss.backward()
                 optimizer.step()
 
                 running_loss += loss.item()
-                start_index += BATCH_SIZE
+                start_index += batch_size
 
             else:
                 if e % 100 == 99:
-                    print("Epoch {} - Training loss: {}".format(e, running_loss / X.shape[0]))
+                    if not (validation_split is None):
+                        pred_val = self._model(x_val)
+                        loss_val = criterion(pred_val, y_val).item()
+
+                        print("Epoch {} - Training loss: {} - Validation loss: {}".format(e,
+                                                                                          running_loss / x_train.shape[
+                                                                                              0],
+                                                                                          loss_val / x_val.shape[0]))
+                    else:
+                        print("Epoch {} - Training loss: {}".format(e, running_loss / x_train.shape[0]))
+
+        return self
 
     def create_model(self):
         """
@@ -133,7 +178,13 @@ class DeepLearningModel(AbstractModel):
                 crt_size = crt_size // 2
 
         else:
-            # TODO - add custom layer sizes list
+            for layer_size in hidden_layers_requested:
+                if layer_size == 0:
+                    layer_size = self.DEFAULT_LAYER_SIZE
+                    # TODO:show warning, empty hidden layer
+                if layer_size < 0:
+                    layer_size = -layer_size
+                hidden_layers.append(layer_size)
             pass
 
         ### activations
@@ -165,7 +216,7 @@ class DeepLearningModel(AbstractModel):
         ### dropout
         if type(dropout_requested) not in [float, list]:
             # TODO show warning - dropout type provided not understood
-            dropout_requested = 0.1
+            dropout_requested = self.DEFAULT_DROPOUT
 
         if type(dropout_requested) is float:
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
@@ -223,7 +274,7 @@ class DeepLearningModel(AbstractModel):
 
             def forward(self, x):
                 # for each hidden layer: apply the weighted transformation, activate and dropout
-                for i in range(self._layer_count-1):
+                for i in range(self._layer_count - 1):
                     x = self._layers[i](x)  # transform
 
                     if i < len(self._activations):  # activate

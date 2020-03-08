@@ -10,7 +10,7 @@ class AbstractModel(ABC):
     """
 
     @abstractmethod
-    def train(self, X: DataFrame, Y:DataFrame, time:int=600):
+    def train(self, X: DataFrame, Y: DataFrame, time: int = 600):
         """
             Trains the model with the data provided.
         :param time: time of the training session in seconds: default 10 minutes

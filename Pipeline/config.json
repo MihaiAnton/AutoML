@@ -64,8 +64,10 @@
 
     "DEFAULT_MODEL": "neural_network",
     "DEFAULT_MODEL_CONFIG": {
-      "LEARNING_RATE": 0.001,
-      "HIDDEN_LAYERS": "smooth",
+      "OPTIMIZER" : "Adam",
+      "LEARNING_RATE": 0.002,
+      "MOMENTUM": 0.1,
+      "HIDDEN_LAYERS": [64,32],
       "ACTIVATIONS": "sigmoid",
       "DROPOUT": 0.1
     },
