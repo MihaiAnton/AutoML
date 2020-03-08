@@ -58,7 +58,7 @@
   "TRAINING": true,
   "TRAINING_CONFIG": {
     "TYPE": "default",
-    "TIME": "1h 20m",
+    "TIME": "10h 30s",
 
     "PREDICTED_COLUMN_NAME": "Survived",
 

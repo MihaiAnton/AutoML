@@ -5,7 +5,7 @@ from torch import nn, optim, tensor
 from ....Exceptions.learnerException import DeepLearningModelException
 from sklearn.model_selection import train_test_split
 from random import randrange
-
+import time
 
 class ModuleList(object):
     """
@@ -69,13 +69,13 @@ class DeepLearningModel(AbstractModel):
     def predict(self, X: DataFrame) -> DataFrame:
         pass
 
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, validation_split: float = None):
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = None):
         """
             Trains the model according to the specifications provided.
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param X: the dependent variables to train with
         :param Y: the predicted variables
-        :param time: the training time in seconds, default 10 minutes
+        :param train_time: the training time in seconds, default 10 minutes
         :return: self (trained model)
         """
         # define an optimizer
@@ -95,7 +95,6 @@ class DeepLearningModel(AbstractModel):
             raise DeepLearningModelException("Optimizer {} not understood.".format(requested_optimizer))
 
         batch_size = self._config.get("BATCH_SIZE", self.DEFAULT_BATCH_SIZE)
-        EPOCHS = 12000
 
         # create the train and validation datasets
         if validation_split is None:
@@ -116,8 +115,22 @@ class DeepLearningModel(AbstractModel):
             y_train = tensor(y_train).float()
             y_val = tensor(y_val).float()
 
+        # prepare for time handling
+        seconds_count = 0
+        epochs = 0
+
+        start_time = time.time()
+        requested_finish = start_time + train_time
+        expected_finish = requested_finish
+
+        keep_training = True
+
         # train the model - handle time somehow
-        for e in range(EPOCHS):
+        while keep_training:
+            keep_training = False
+
+            epoch_start = time.time()
+
             running_loss = 0
             start_index = 0
 
@@ -136,17 +149,54 @@ class DeepLearningModel(AbstractModel):
                 start_index += batch_size
 
             else:
-                if e % 100 == 99:
+                epoch_end = time.time()
+                epoch_duration = epoch_end - epoch_start
+                # predict the end of the training session
+                seconds_count += epoch_duration
+                epochs += 1
+
+                time_per_epoch = seconds_count / epochs
+
+                epochs_to_complete = (requested_finish - epoch_end) / time_per_epoch  # how much time available split to
+                # the average epoch time
+                if epochs_to_complete - int(epochs_to_complete) >= 0.5:
+                    epochs_to_complete = int(epochs_to_complete) + 1
+                else:
+                    epochs_to_complete = int(epochs_to_complete)
+
+                if epochs_to_complete > 0:
+                    keep_training = True
+
+                if epochs % 100 == 99:
+
+                    # print("--",time.localtime(epoch_end), epochs_to_complete, time_per_epoch)
+                    expected_finish = epoch_end + epochs_to_complete * time_per_epoch
+
+                    # printed format
+                    date = time.localtime(expected_finish)
+                    if time.localtime(epoch_end).tm_mday == date.tm_mday:
+                        day = ""
+                    elif time.localtime(epoch_end).tm_mday == date.tm_mday - 1:
+                        day = "tomorrow|"
+                    else:
+                        day = "{}/{}/{}|".format(date.tm_mday, date.tm_mon, date.tm_year)
+
+                    hour = date.tm_hour
+                    minute = date.tm_min
+                    second = date.tm_sec
+
+
+
                     if not (validation_split is None):
                         pred_val = self._model(x_val)
                         loss_val = criterion(pred_val, y_val).item()
 
-                        print("Epoch {} - Training loss: {} - Validation loss: {}".format(e,
-                                                                                          running_loss / x_train.shape[
-                                                                                              0],
-                                                                                          loss_val / x_val.shape[0]))
+                        print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
+                              .format(epochs,running_loss / x_train.shape[0],loss_val / x_val.shape[0],
+                                        day, hour, minute, second))
                     else:
-                        print("Epoch {} - Training loss: {}".format(e, running_loss / x_train.shape[0]))
+                        print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs, running_loss / x_train.shape[0],
+                                        day, hour, minute, second))
 
         return self
 
