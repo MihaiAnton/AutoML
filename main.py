@@ -38,6 +38,9 @@ pipeline = Pipeline()
 data = read_csv("Datasets/titanic_converted.csv")
 model = pipeline.learn(data)
 
+data = data.drop("Survived", axis=1)
+x = model.predict(data)
+print(x)
 
 
 

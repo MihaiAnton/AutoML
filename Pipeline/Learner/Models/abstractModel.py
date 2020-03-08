@@ -26,3 +26,11 @@ class AbstractModel(ABC):
         :param X: DataFrame; the X values to be predicted into some Y Value
         :return: DataFrame with the predicted data
         """
+
+    def __call__(self, X: DataFrame) -> DataFrame:
+        """
+            Calls the predict method.
+        :param X: data to be predicted
+        :return: predicted data
+        """
+        self.predict(X)

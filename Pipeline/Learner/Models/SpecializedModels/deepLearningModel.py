@@ -6,6 +6,9 @@ from ....Exceptions.learnerException import DeepLearningModelException
 from sklearn.model_selection import train_test_split
 from random import randrange
 import time
+import numpy as np
+import pandas as pd
+
 
 class ModuleList(object):
     """
@@ -49,7 +52,7 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_LR = 0.01
     DEFAULT_MOMENTUM = 0.4
 
-    def __init__(self, in_size, out_size, config: dict = None):
+    def __init__(self, in_size, out_size, config: dict = None, predicted_name: list = None):
         """
             Initializes a deep learning model.
             :param in_size: the input size of the neural network
@@ -59,6 +62,10 @@ class DeepLearningModel(AbstractModel):
         if config is None:
             config = {}
 
+        self._predicted_name = predicted_name
+        if predicted_name is None:
+            self._predicted_name = ["predicted_{}".format(i) for i in range(out_size)]
+
         self._config = config
         self._input_count = in_size
         self._output_count = out_size
@@ -67,7 +74,19 @@ class DeepLearningModel(AbstractModel):
         self._model = self.create_model()
 
     def predict(self, X: DataFrame) -> DataFrame:
-        pass
+        """
+            Predicts a set of data transformed to fit to the model's input expectation
+        :param X: dataset to predict
+        :return: DataFrame with the output
+        """
+
+        processed = tensor(X.to_numpy()).float()
+        output = self._model(processed)
+
+        numpy_array = np.asarray(output.detach())
+
+        df = pd.DataFrame(numpy_array, columns=self._predicted_name)
+        return df
 
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = None):
         """
@@ -185,18 +204,17 @@ class DeepLearningModel(AbstractModel):
                     minute = date.tm_min
                     second = date.tm_sec
 
-
-
                     if not (validation_split is None):
                         pred_val = self._model(x_val)
                         loss_val = criterion(pred_val, y_val).item()
 
                         print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
-                              .format(epochs,running_loss / x_train.shape[0],loss_val / x_val.shape[0],
-                                        day, hour, minute, second))
+                              .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
+                                      day, hour, minute, second))
                     else:
-                        print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs, running_loss / x_train.shape[0],
-                                        day, hour, minute, second))
+                        print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs,
+                                                                                      running_loss / x_train.shape[0],
+                                                                                      day, hour, minute, second))
 
         return self
 
