@@ -58,7 +58,7 @@
   "TRAINING": true,
   "TRAINING_CONFIG": {
     "TYPE": "default",
-    "TIME": "5s",
+    "TIME": "10s",
 
     "PREDICTED_COLUMN_NAME": "Survived",
 
@@ -67,7 +67,7 @@
       "OPTIMIZER" : "Adam",
       "LEARNING_RATE": 0.002,
       "MOMENTUM": 0.1,
-      "HIDDEN_LAYERS": [64,32],
+      "HIDDEN_LAYERS": [32,16],
       "ACTIVATIONS": "sigmoid",
       "DROPOUT": 0.1
     },

@@ -40,7 +40,9 @@ model = pipeline.learn(data)
 
 data = data.drop("Survived", axis=1)
 x = model.predict(data)
-print(x)
+
+
+model.save("model.json")
 
 
 

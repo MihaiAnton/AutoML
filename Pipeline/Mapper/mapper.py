@@ -1,6 +1,7 @@
 import json
 from Pipeline.Exceptions import MapperException
 
+
 class Mapper:
     """
         Maps modifications over a dataset.
@@ -18,7 +19,7 @@ class Mapper:
             in order to correctly transform the data.
     """
 
-    def __init__(self, name:str, file:str=None, dictionary:dict=None):
+    def __init__(self, name: str, file: str = None, dictionary: dict = None):
         """
             Receives a dictionary of mappings that contains changes from the raw data to the processed data.
         :param file: path to file; if not None the mapper inits itself from a file
@@ -30,32 +31,32 @@ class Mapper:
             self._map = dictionary
         else:
             self._map = {
-                "FIELDS":{},
-                "MAPPERS":{}
+                "FIELDS": {},
+                "MAPPERS": {}
             }
             if file:
                 self._init_from_file(file)
 
-    def get_name(self)->str:
+    def get_name(self) -> str:
         """
             Returns the name of the mapper
         :return: name:str
         """
         return self._name
 
-    def _get_fields(self)->dict:
+    def _get_fields(self) -> dict:
         """
             Get the fields dictionary of the current mapper
         :return: reference to fields map
         """
-        return self._map.get("FIELDS",{})
+        return self._map.get("FIELDS", {})
 
-    def _get_recurrent_mappers(self)->dict:
+    def _get_recurrent_mappers(self) -> dict:
         """
             Get the recurrent mappers' dictionary that this map holds
         :return: reference to recurrent mappers' map
         """
-        return self._map.get("MAPPERS",{})
+        return self._map.get("MAPPERS", {})
 
     def set(self, key, value):
         """
@@ -77,14 +78,14 @@ class Mapper:
         """
         return self._get_fields().get(key, default)
 
-    def get_map(self)->dict:
+    def get_map(self) -> dict:
         """
             Return the raw map
         :return: map
         """
         return self._map
 
-    def get_mapper(self, name: str, default:dict={})->'Mapper':
+    def get_mapper(self, name: str, default: dict = {}) -> 'Mapper':
         """
             Returns the mapper with the given name
         :param default: the default value in case the searched mapper is not found
@@ -94,7 +95,7 @@ class Mapper:
         submap = self._get_recurrent_mappers().get(name, default)
         return Mapper(name, dictionary=submap)
 
-    def set_mapper(self, mapper: 'Mapper', name:str=None)->'Mapper':
+    def set_mapper(self, mapper: 'Mapper', name: str = None) -> 'Mapper':
         """
             Sets the dictionary of a mapper within the recurring mappers field.
             If a dictionary with the same name exists it will be overwritten.
@@ -107,8 +108,7 @@ class Mapper:
         self._get_recurrent_mappers()[name] = mapper.get_map()
         return self
 
-
-    def _init_from_file(self, file:str)->'Mapper':
+    def _init_from_file(self, file: str) -> 'Mapper':
         """
             Inits the mapper from a configuration previously saved to file
         :param file: file to load the mapper from
@@ -123,9 +123,7 @@ class Mapper:
         except Exception as e:
             raise MapperException("Could not init from file {}.".format(file))
 
-
-
-    def save_to_file(self, file:str)->'Mapper':
+    def save_to_file(self, file: str) -> 'Mapper':
         """
             Saves the mapper to file
         :param file: path to save file
@@ -133,36 +131,5 @@ class Mapper:
         """
         import json
         with open(file, 'w') as f:
-            json.dump(self.get_map(),f)
+            json.dump(self.get_map(), f)
         return self
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 
 from pandas import DataFrame
@@ -33,4 +34,29 @@ class AbstractModel(ABC):
         :param X: data to be predicted
         :return: predicted data
         """
-        self.predict(X)
+        return self.predict(X)
+
+    @abstractmethod
+    def to_dict(self) -> dict:
+        """
+            Returns a dictionary representation that encapsulates all the details of the model
+        :return: dictionary
+        """
+
+    @abstractmethod
+    def save(self, file: str):
+        """
+            Saves the model to file
+        :param file: the name of the file or the absolute path to it
+        :return: self for chaining purposes
+        """
+
+    @staticmethod
+    @abstractmethod
+    def load(source):
+        """
+            Returns Model instance after loading it from file.
+            Should construct and return the same object as before saving it to file.
+        :param source: file or dictionary with the data within
+        :return: Model instance
+        """

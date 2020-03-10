@@ -1,3 +1,6 @@
+import json
+import os
+
 from pandas import DataFrame
 
 from ..abstractModel import AbstractModel
@@ -8,6 +11,9 @@ from random import randrange
 import time
 import numpy as np
 import pandas as pd
+from torch import save as torch_save
+
+from .modelTypes import DEEP_LEARNING_MODEL as MODEL_TYPE
 
 
 class ModuleList(object):
@@ -52,13 +58,17 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_LR = 0.01
     DEFAULT_MOMENTUM = 0.4
 
-    def __init__(self, in_size, out_size, config: dict = None, predicted_name: list = None):
+    def __init__(self, in_size, out_size, config: dict = None, predicted_name: list = None, dictionary=None):
         """
             Initializes a deep learning model.
             :param in_size: the input size of the neural network
             :param out_size: the predicted size of the network
             :param config: the configuration map
         """
+        if type(dictionary) is dict:  # for internal use;
+            self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
+            return
+
         if config is None:
             config = {}
 
@@ -72,6 +82,7 @@ class DeepLearningModel(AbstractModel):
 
         # create a neural network, named model
         self._model = self.create_model()
+        self._optimizer = None
 
     def predict(self, X: DataFrame) -> DataFrame:
         """
@@ -113,6 +124,7 @@ class DeepLearningModel(AbstractModel):
         else:
             raise DeepLearningModelException("Optimizer {} not understood.".format(requested_optimizer))
 
+        self._optimizer = optimizer
         batch_size = self._config.get("BATCH_SIZE", self.DEFAULT_BATCH_SIZE)
 
         # create the train and validation datasets
@@ -228,7 +240,7 @@ class DeepLearningModel(AbstractModel):
         # get the configured items
         hidden_layers_requested = self._config.get("HIDDEN_LAYERS", "smooth")
         activation_requested = self._config.get("ACTIVATIONS", self.DEFAULT_ACTIVATION)
-        dropout_requested = self._config.get("DROPOUT", 0)
+        dropout_requested = self._config.get("DROPOUT", self.DEFAULT_DROPOUT)
         input_layer_size = self._input_count
         output_layer_size = self._output_count
 
@@ -359,3 +371,106 @@ class DeepLearningModel(AbstractModel):
         # return an instance
         net = Network()
         return net
+
+    def to_dict(self) -> dict:
+        """
+            Returns a dictionary representation of the model for further file saving.
+        :return: dictionary with model encoding
+        """
+
+        #get the model weights
+        torch_save(self._model.state_dict(),
+                   ".tmp_model_file")  # create a temporary file with the binaries of the model
+        with open(".tmp_model_file", 'rb') as tmp_file:  # include the binaries in a new created json file
+            model_binary = tmp_file.read()
+
+
+
+
+        model_data = {
+            "STATE_DICT": self._model.state_dict()
+        }
+
+        metadata = {
+            "MODEL_TYPE": MODEL_TYPE
+        }
+
+        data = {
+            "PREDICTED_NAME": self._predicted_name,
+            "CONFIG": self._config,
+            "INPUT_COUNT": self._input_count,
+            "OUTPUT_COUNT": self._output_count,
+            "MODEL": model_binary,
+            "METADATA": metadata
+        }
+
+        return data
+
+    @staticmethod
+    def load(source):
+        """
+            Loads the DeepLearningModel from a source that can be a file with a json or an already
+        parsed dictionary.
+        :param source: str(with previously saved model) or dict(with the dictionary previously
+                        returned by to_dict)
+        :return: model
+        """
+        if type(source) is str:
+            try:
+                with open(source) as f:
+                    dictionary = json.load(f)
+                    model = DeepLearningModel(0, 0, dictionary=dictionary)
+                return model
+            except Exception as e:
+                raise Exception("Could not init deep learning model from file {}.".format(source))
+
+        elif type(source) is dict:
+            model = DeepLearningModel(0, 0, dictionary=source)
+        else:
+            raise DeepLearningModelException(
+                "Could not load deep learning model from file or dict of type {}".format(type(source)))
+
+    def save(self, file: str):
+        """
+            Saves the model to the file specified
+        :param file: string to the file name or file path
+        :return: self for chaining purposes
+        """
+        data = {
+
+        }
+
+        torch_save(self._model.state_dict(),
+                   ".tmp_model_file")  # create a temporary file with the binaries of the model
+
+        with open(".tmp_model_file", 'rb') as tmp_file:  # include the binaries in a new created json file
+            file_content = tmp_file.read()
+            os.remove(".tmp_model.file")
+            with open(file, 'w') as f:
+                json.dump({
+                    "DATA": data,
+                    "MODEL": str(file_content)
+                }, f)
+
+
+
+    def _init_from_dictionary(self, d: dict):
+        """
+            Inits the model from dictionary; sets the attributes to be as they were before saving.
+            It is assumed theat the dictionary provided here is the one intended for this model type.
+                - should only be called from the constructor
+
+        :param d: dictionary previously created by to_dict
+        :return: None
+        """
+
+        data = d.get("DATA")
+        model = d.get("MODEL")
+
+        #init the data
+
+
+        #init the model
+
+
+        #restore the weights
