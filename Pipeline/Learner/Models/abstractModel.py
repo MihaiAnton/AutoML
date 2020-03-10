@@ -1,4 +1,5 @@
 import json
+import pickle
 from abc import ABC, abstractmethod
 
 from pandas import DataFrame
@@ -43,12 +44,24 @@ class AbstractModel(ABC):
         :return: dictionary
         """
 
-    @abstractmethod
     def save(self, file: str):
         """
             Saves the model to file
         :param file: the name of the file or the absolute path to it
         :return: self for chaining purposes
+        """
+        import json
+        with open(file, 'wb') as f:
+            data = self.to_dict()
+            data["MODEL_TYPE"] = self.model_type()
+            pickle.dump(data, f)
+        return self
+
+    @abstractmethod
+    def model_type(self) -> str:
+        """
+            Returns the model type from available model types in file "model_types.py"
+        :return: string with the model type
         """
 
     @staticmethod

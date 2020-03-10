@@ -1,5 +1,7 @@
 import json
 import os
+import pickle
+import binascii
 
 from pandas import DataFrame
 
@@ -12,6 +14,7 @@ import time
 import numpy as np
 import pandas as pd
 from torch import save as torch_save
+from torch import load as torch_load
 
 from .modelTypes import DEEP_LEARNING_MODEL as MODEL_TYPE
 
@@ -57,6 +60,7 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_OPTIMIZER = "SGD"
     DEFAULT_LR = 0.01
     DEFAULT_MOMENTUM = 0.4
+    TEMPORARY_FILE = ".tmp_model_file"
 
     def __init__(self, in_size, out_size, config: dict = None, predicted_name: list = None, dictionary=None):
         """
@@ -83,6 +87,7 @@ class DeepLearningModel(AbstractModel):
         # create a neural network, named model
         self._model = self.create_model()
         self._optimizer = None
+        self._train_mode = True
 
     def predict(self, X: DataFrame) -> DataFrame:
         """
@@ -90,6 +95,9 @@ class DeepLearningModel(AbstractModel):
         :param X: dataset to predict
         :return: DataFrame with the output
         """
+        if self._train_mode:
+            self._model.eval()
+            self._train_mode = False
 
         processed = tensor(X.to_numpy()).float()
         output = self._model(processed)
@@ -110,6 +118,10 @@ class DeepLearningModel(AbstractModel):
         """
         # define an optimizer
         # should be defined in configuration - a default one will be used now for the demo
+        if not self._train_mode:
+            self._train_mode = True
+            self._model.train()
+
         criterion = nn.BCELoss()
 
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
@@ -378,30 +390,27 @@ class DeepLearningModel(AbstractModel):
         :return: dictionary with model encoding
         """
 
-        #get the model weights
-        torch_save(self._model.state_dict(),
-                   ".tmp_model_file")  # create a temporary file with the binaries of the model
-        with open(".tmp_model_file", 'rb') as tmp_file:  # include the binaries in a new created json file
-            model_binary = tmp_file.read()
+        # get the model weights
+        model_binary = ""
+
+        model = pickle.dumps(self._model.state_dict())
+
+        # torch_save(self._model.state_dict(), self.TEMPORARY_FILE)
+        # # create a temporary file with the binaries of the model
+        # with open(self.TEMPORARY_FILE, 'rb') as tmp_file:  # include the binaries in a new created json file
+        #     model_binary = tmp_file.read()
+        #     model_binary = json.dumps(model_binary)
 
 
-
-
-        model_data = {
-            "STATE_DICT": self._model.state_dict()
-        }
-
-        metadata = {
-            "MODEL_TYPE": MODEL_TYPE
-        }
 
         data = {
-            "PREDICTED_NAME": self._predicted_name,
-            "CONFIG": self._config,
-            "INPUT_COUNT": self._input_count,
-            "OUTPUT_COUNT": self._output_count,
-            "MODEL": model_binary,
-            "METADATA": metadata
+            "MODEL": model,
+            "METADATA": {
+                "PREDICTED_NAME": self._predicted_name,
+                "CONFIG": self._config,
+                "INPUT_COUNT": self._input_count,
+                "OUTPUT_COUNT": self._output_count,
+            }
         }
 
         return data
@@ -426,33 +435,17 @@ class DeepLearningModel(AbstractModel):
 
         elif type(source) is dict:
             model = DeepLearningModel(0, 0, dictionary=source)
+            return model
         else:
             raise DeepLearningModelException(
                 "Could not load deep learning model from file or dict of type {}".format(type(source)))
 
-    def save(self, file: str):
+    def model_type(self) -> str:
         """
-            Saves the model to the file specified
-        :param file: string to the file name or file path
-        :return: self for chaining purposes
+            Returns the model type; in this case -> DEEP_LEARNING_MODEL
+        :return:
         """
-        data = {
-
-        }
-
-        torch_save(self._model.state_dict(),
-                   ".tmp_model_file")  # create a temporary file with the binaries of the model
-
-        with open(".tmp_model_file", 'rb') as tmp_file:  # include the binaries in a new created json file
-            file_content = tmp_file.read()
-            os.remove(".tmp_model.file")
-            with open(file, 'w') as f:
-                json.dump({
-                    "DATA": data,
-                    "MODEL": str(file_content)
-                }, f)
-
-
+        return MODEL_TYPE
 
     def _init_from_dictionary(self, d: dict):
         """
@@ -464,13 +457,27 @@ class DeepLearningModel(AbstractModel):
         :return: None
         """
 
-        data = d.get("DATA")
+        data = d.get("METADATA")
         model = d.get("MODEL")
 
-        #init the data
+        # init the data
+        self._predicted_name = data.get("PREDICTED_NAME")
+        self._config = data.get("CONFIG")
+        self._input_count = data.get("INPUT_COUNT")
+        self._output_count = data.get("OUTPUT_COUNT")
 
+        # init the model
+        self._model = self.create_model()
 
-        #init the model
+        # restore the weights
+        model_saved = pickle.loads(model)
+        self._model.load_state_dict(model_saved)
 
+        self._train_mode = False
+        self._model.eval()
 
-        #restore the weights
+    def reset(self):
+        sd = self._model.state_dict()
+
+        # self._model = self.create_model()
+        self._model.load_state_dict(sd)

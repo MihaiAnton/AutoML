@@ -1,4 +1,5 @@
 import json
+import pickle
 
 from .SpecializedModels.modelTypes import *
 from .SpecializedModels.deepLearningModel import DeepLearningModel
@@ -12,8 +13,8 @@ def load_model(source):
     :return: model instance
     """
     if type(source) is str:
-        with open(source) as f:
-            dictionary = json.load(f)
+        with open(source, 'rb') as f:
+            dictionary = pickle.load(f)
 
     elif type(source) is dict:
         dictionary = source
@@ -23,7 +24,7 @@ def load_model(source):
             "Could not load model from data type {}".format(type(source)))
 
     model = None
-    model_type = dictionary.get("DATA", {}).get("MODEL_TYPE", "undefined")
+    model_type = dictionary.get("MODEL_TYPE", "undefined")
 
     if model_type == DEEP_LEARNING_MODEL:
         model = DeepLearningModel(0, 0, dictionary=dictionary)

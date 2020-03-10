@@ -1,5 +1,5 @@
 from Pipeline.pipeline import Pipeline
-
+from Pipeline.Learner.Models.model_loader import load_model
 print("Start AutoML")
 
 ####################### Pipeline example 1: processing data
@@ -42,8 +42,15 @@ data = data.drop("Survived", axis=1)
 x = model.predict(data)
 
 
-model.save("model.json")
+model.save("model")
 
+model_load = load_model("model")
+
+
+res1 = model.predict(data)
+res2 = model_load.predict(data)
+dif = res1 != res2
+print("ok")
 
 
 

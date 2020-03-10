@@ -58,8 +58,7 @@
   "TRAINING": true,
   "TRAINING_CONFIG": {
     "TYPE": "default",
-    "TIME": "10s",
-
+    "TIME": "3s",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "neural_network",
