@@ -31,12 +31,15 @@ class Pipeline:
             2. #TODO complete with other modules
     """
 
-    def __init__(self, config: dict = None, mapper_file: str = None, mapper: 'Mapper' = None):
+    def __init__(self, config: dict = None, mapper_file: str = None, mapper: 'Mapper' = None,
+                 default_config_path: str = None):
         """
             Inits the pipeline
         :param config: configuration dictionary
         :param mapper_file: the file where the mapper is saved, if existing
         :param mapper:the dictionary (in Mapper format) containing the data previously saved by the Pipeline instance
+        :param default_config_path: if the pipeline is used with a configuration file located elsewhere than
+                    the default location; if provided, this path will be used when creating the configuration
         Usage:
             if provided any data, the Pipeline will init itself from that dictionary
             otherwise, if provided a config it will use that, if not it will try to read the config from file
@@ -49,7 +52,7 @@ class Pipeline:
             self._mapper_file = None
 
             if config is None:
-                self._config = Pipeline._read_config_file()
+                self._config = Pipeline._read_config_file(default_config_path)
             else:
                 self._config = config
             if self._config.get("DATA_PROCESSING", False):
@@ -200,12 +203,17 @@ class Pipeline:
         return self._model
 
     @staticmethod
-    def _read_config_file() -> dict:
+    def _read_config_file(path: str = None) -> dict:
         """
             Reads the default configuration file
+        :param path: the explicit path for the configuration file
         :return: dictionary with the encodings
         """
-        path = os.path.join(os.getcwd(), 'Pipeline', 'config.json')
+        if path is None:
+            path = os.path.join(os.getcwd(), 'Pipeline', 'config.json')
+
+        # TODO add error handling for incorrect path
+
         # print(path)
         with open(path) as json_file:
             data = json.load(json_file)
