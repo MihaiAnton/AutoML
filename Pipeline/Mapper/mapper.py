@@ -1,6 +1,7 @@
-import json
-from Pipeline.Exceptions import MapperException
 import pickle
+
+from ..Exceptions import MapperException
+
 
 class Mapper:
     """
@@ -17,13 +18,23 @@ class Mapper:
 
         In the case of data conversion( for predicting purposes ), each module will be given it's previously created mapper
             in order to correctly transform the data.
+
+
+        Methods:
+            - get_name: returns the name
+            - set: sets a value to a key
+            - get: retrieves the value of a key
+            - get_map: returns the map of (key, value) pairs
+            - get_mapper: retrieves a mapper by name
+            - set_mapper: sets a mapper using it's name
+            - save_to_file: saves to a file
     """
 
     def __init__(self, name: str, file: str = None, dictionary: dict = None):
         """
             Receives a dictionary of mappings that contains changes from the raw data to the processed data.
         :param file: path to file; if not None the mapper inits itself from a file
-        :param dict: dictionary of changes
+        :param dictionary: dictionary of changes
         """
 
         self._name = name
