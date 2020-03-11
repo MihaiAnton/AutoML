@@ -14,4 +14,4 @@
 
 from .learner import Learner
 from .learner import LearnerException
-from .Models import ModelFactory, model_loader, AbstractModel
+from .Models import ModelFactory, load_model, AbstractModel

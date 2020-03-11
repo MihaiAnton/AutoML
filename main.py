@@ -1,7 +1,5 @@
-from Pipeline.pipeline import Pipeline
-from Pipeline.Learner.Models.model_loader import load_model
 from pandas import read_csv
-from Pipeline.pipeline import load_pipeline
+from Pipeline import Pipeline, load_pipeline, load_model
 
 print("Start AutoML")
 
