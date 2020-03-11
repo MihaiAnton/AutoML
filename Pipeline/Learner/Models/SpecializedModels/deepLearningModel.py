@@ -450,7 +450,7 @@ class DeepLearningModel(AbstractModel):
     def _init_from_dictionary(self, d: dict):
         """
             Inits the model from dictionary; sets the attributes to be as they were before saving.
-            It is assumed theat the dictionary provided here is the one intended for this model type.
+            It is assumed that the dictionary provided here is the one intended for this model type.
                 - should only be called from the constructor
 
         :param d: dictionary previously created by to_dict
