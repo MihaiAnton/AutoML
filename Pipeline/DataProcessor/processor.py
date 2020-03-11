@@ -6,7 +6,7 @@ import numpy as np
 from .DataCleaning import Cleaner
 from .DataSplitting import Splitter
 from .FeatureEngineering import Engineer
-from .FeatureMapping import Mapper
+from ..Mapper import Mapper
 from ..Exceptions.dataProcessorException import DataProcessorException
 
 

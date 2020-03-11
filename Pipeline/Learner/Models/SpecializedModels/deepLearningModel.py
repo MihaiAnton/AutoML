@@ -52,6 +52,11 @@ class ModuleList(object):
 
 
 class DeepLearningModel(AbstractModel):
+    """
+        AbstractModel implementation using a deep learning actual model.
+        The framework used is PyTorch.
+    """
+
     POSSIBLE_ACTIVATIONS = ["relu", "linear", "sigmoid"]  # TODO complete with other activations
     DEFAULT_ACTIVATION = "linear"
     DEFAULT_BATCH_SIZE = 64
@@ -390,18 +395,8 @@ class DeepLearningModel(AbstractModel):
         :return: dictionary with model encoding
         """
 
-        # get the model weights
-        model_binary = ""
-
+        # get the model data
         model = pickle.dumps(self._model.state_dict())
-
-        # torch_save(self._model.state_dict(), self.TEMPORARY_FILE)
-        # # create a temporary file with the binaries of the model
-        # with open(self.TEMPORARY_FILE, 'rb') as tmp_file:  # include the binaries in a new created json file
-        #     model_binary = tmp_file.read()
-        #     model_binary = json.dumps(model_binary)
-
-
 
         data = {
             "MODEL": model,
@@ -413,32 +408,10 @@ class DeepLearningModel(AbstractModel):
             }
         }
 
-        return data
-
-    @staticmethod
-    def load(source):
-        """
-            Loads the DeepLearningModel from a source that can be a file with a json or an already
-        parsed dictionary.
-        :param source: str(with previously saved model) or dict(with the dictionary previously
-                        returned by to_dict)
-        :return: model
-        """
-        if type(source) is str:
-            try:
-                with open(source) as f:
-                    dictionary = json.load(f)
-                    model = DeepLearningModel(0, 0, dictionary=dictionary)
-                return model
-            except Exception as e:
-                raise Exception("Could not init deep learning model from file {}.".format(source))
-
-        elif type(source) is dict:
-            model = DeepLearningModel(0, 0, dictionary=source)
-            return model
-        else:
-            raise DeepLearningModelException(
-                "Could not load deep learning model from file or dict of type {}".format(type(source)))
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "MODEL_DATA": data
+        }
 
     def model_type(self) -> str:
         """
@@ -475,9 +448,3 @@ class DeepLearningModel(AbstractModel):
 
         self._train_mode = False
         self._model.eval()
-
-    def reset(self):
-        sd = self._model.state_dict()
-
-        # self._model = self.create_model()
-        self._model.load_state_dict(sd)

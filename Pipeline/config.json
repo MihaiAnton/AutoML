@@ -16,12 +16,12 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "SalePrice",
+    "PREDICTED_COLUMN_NAME": "Survived",
 
 
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
-      "PROCESS_CATEGORICAL_PREDICTED_COLUMN": true,
+      "PROCESS_CATEGORICAL_PREDICTED_COLUMN": false,
       "DO_NOT_PROCESS": ["Id"],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
@@ -51,8 +51,48 @@
         }
       }
     }
+  },
+
+
+
+  "TRAINING": true,
+  "TRAINING_CONFIG": {
+    "TYPE": "default",
+    "TIME": "3s",
+    "PREDICTED_COLUMN_NAME": "Survived",
+
+    "DEFAULT_MODEL": "neural_network",
+    "DEFAULT_MODEL_CONFIG": {
+      "OPTIMIZER" : "Adam",
+      "LEARNING_RATE": 0.002,
+      "MOMENTUM": 0.1,
+      "HIDDEN_LAYERS": [32,16],
+      "ACTIVATIONS": "sigmoid",
+      "DROPOUT": 0.1
+    },
+
+    "EVOLUTIONARY_MODEL_CONFIG": {
+      "MODELS": ["neural_network"]
+    }
   }
 
 
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,13 +1,14 @@
 from pandas import DataFrame
 from ...Exceptions.dataProcessorException import DataSplittingException
 
+
 class Splitter:
     """
         Handles the data split logic.
     """
 
     @staticmethod
-    def XYsplit(data:DataFrame, y_column:str)->(DataFrame,DataFrame):
+    def XYsplit(data: DataFrame, y_column: str) -> (DataFrame, DataFrame):
         """
             Splits the data in X and Y.
         :param data: dataframe with the dataset
@@ -18,10 +19,8 @@ class Splitter:
         if y_column in data.columns:
             Y = data[[y_column]]
             X_cols = data.columns.tolist()
-            X_cols.remove(y_column)         #removing the y columns from the x subset
+            X_cols.remove(y_column)  # removing the y columns from the x subset
             X = data[X_cols]
-            return X,Y
+            return X, Y
         else:
             raise DataSplittingException("Cannot split after non-existing Y column {}".format(y_column))
-
-

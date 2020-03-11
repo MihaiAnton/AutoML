@@ -2,13 +2,12 @@ from pandas import DataFrame, get_dummies
 import pandas as pd
 import numpy as np
 
-from ..FeatureMapping import Mapper
+from Pipeline.Mapper import Mapper
 from sklearn import preprocessing as pp
 from ...Exceptions.dataProcessorException import DataEngineeringException
 
 import spacy
 from nltk import word_tokenize
-from nltk.stem import WordNetLemmatizer
 
 
 class Engineer:
