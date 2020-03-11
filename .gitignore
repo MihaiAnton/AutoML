@@ -3,7 +3,7 @@ Datasets
 *.json
 /Datasets/
 *pyc
-
+/tmp_files/
 
 
 .Python
