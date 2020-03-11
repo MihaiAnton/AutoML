@@ -1,4 +1,3 @@
-import json
 import pickle
 from abc import ABC, abstractmethod
 
@@ -7,8 +6,18 @@ from pandas import DataFrame
 
 class AbstractModel(ABC):
     """
-        The result of the pipeline.
+        The end result of the pipeline.
         It's main task is to predict after a training session has been done.
+
+        Methods:
+            - train: trains the actual model based on a dataset
+            - predict: predicts the output of a dataset
+            - to_dict: returns a serializable dictionary
+            - save: saves the model to file
+            - model_type: returns the model type, as defined in "SpecializedModel/modelTypes.py"
+
+        Behaviour:
+            - calling an object ( model_instance(data) ), will return the prediction
     """
 
     @abstractmethod

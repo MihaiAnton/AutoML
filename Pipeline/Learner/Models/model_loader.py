@@ -1,8 +1,7 @@
-import json
 import pickle
 
 from .SpecializedModels.modelTypes import *
-from .SpecializedModels.deepLearningModel import DeepLearningModel
+from .SpecializedModels import DeepLearningModel
 from ...Exceptions.learnerException import ModelLoaderException
 
 

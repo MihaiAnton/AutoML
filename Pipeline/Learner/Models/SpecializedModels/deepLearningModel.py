@@ -52,6 +52,11 @@ class ModuleList(object):
 
 
 class DeepLearningModel(AbstractModel):
+    """
+        AbstractModel implementation using a deep learning actual model.
+        The framework used is PyTorch.
+    """
+
     POSSIBLE_ACTIVATIONS = ["relu", "linear", "sigmoid"]  # TODO complete with other activations
     DEFAULT_ACTIVATION = "linear"
     DEFAULT_BATCH_SIZE = 64

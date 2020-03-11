@@ -1,7 +1,7 @@
 from ..Mapper import Mapper
 from pandas import DataFrame
-from .Models.abstractModel import AbstractModel
-from .Models.modelFactory import ModelFactory
+from .Models import AbstractModel
+from .Models import ModelFactory
 from ..Exceptions.learnerException import LearnerException
 
 
@@ -9,18 +9,25 @@ class Learner:
     """
         The class that handles the learning inside the pipeline.
         It's main task is to learn from a dataset and return a model.
-        Based on a configuration file given as constructor parameter it is able to do a series of tasks like:
+        Based on a configuration file given as constructor parameter it is able to do a series of tasks:
             - fit the data on a dataset with a default predefined model (defined in config)
-            - fit the data using a series of models and evolutionary algorithms for finding the best one
-            - predict the data using a predefined model
+            - fit the data using a series of models and evolutionary algorithms for finding the best one #TO BE DONE
+
+        Methods:
+            - learn: creates a model and learns it based on a given dataset
+            - get_model: returns the last trained model
+            - get_mapper: gets the mapper with attributes
     """
 
-    def __init__(self, config: dict = {}):
+    def __init__(self, config: dict = None):
         """
             Creates a learner instance based on the configuration file.
             :param config: dictionary with the configurations for the learning module
                         - expected to get the TRAINING_CONFIG section of the config file
         """
+
+        if config is None:
+            config = {}
 
         self._config = config
         self._mapper = Mapper('Learner')
@@ -55,7 +62,8 @@ class Learner:
         self._model = model
         return model
 
-    def _convert_train_time(self, time: str) -> int:
+    @staticmethod
+    def _convert_train_time(time: str) -> int:
         """
             Converts the time from "xd yh zm ts" into seconds
         :param time: string containing the time in textual format -number of days , hours, minutes and seconds
