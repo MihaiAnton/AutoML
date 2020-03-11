@@ -41,7 +41,7 @@ class AbstractModel(ABC):
     def to_dict(self) -> dict:
         """
             Returns a dictionary representation that encapsulates all the details of the model
-        :return: dictionary
+        :return: dictionary with 2 mandatory keys : MODEL_TYPE, MODEL_DATA
         """
 
     def save(self, file: str):
@@ -53,7 +53,6 @@ class AbstractModel(ABC):
         import json
         with open(file, 'wb') as f:
             data = self.to_dict()
-            data["MODEL_TYPE"] = self.model_type()
             pickle.dump(data, f)
         return self
 
@@ -62,14 +61,4 @@ class AbstractModel(ABC):
         """
             Returns the model type from available model types in file "model_types.py"
         :return: string with the model type
-        """
-
-    @staticmethod
-    @abstractmethod
-    def load(source):
-        """
-            Returns Model instance after loading it from file.
-            Should construct and return the same object as before saving it to file.
-        :param source: file or dictionary with the data within
-        :return: Model instance
         """

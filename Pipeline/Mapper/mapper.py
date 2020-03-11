@@ -1,6 +1,6 @@
 import json
 from Pipeline.Exceptions import MapperException
-
+import pickle
 
 class Mapper:
     """
@@ -116,8 +116,8 @@ class Mapper:
         :exception MapperException
         """
         try:
-            with open(file) as f:
-                data = json.load(f)
+            with open(file, 'rb') as f:
+                data = pickle.load(f)
                 self._map = data
             return self
         except Exception as e:
@@ -129,7 +129,7 @@ class Mapper:
         :param file: path to save file
         :return: current mapper
         """
-        import json
-        with open(file, 'w') as f:
-            json.dump(self.get_map(), f)
+        import pickle
+        with open(file, 'wb') as f:
+            pickle.dump(self.get_map(), f)
         return self

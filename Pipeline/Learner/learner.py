@@ -2,6 +2,7 @@ from ..Mapper import Mapper
 from pandas import DataFrame
 from .Models.abstractModel import AbstractModel
 from .Models.modelFactory import ModelFactory
+from ..Exceptions.learnerException import LearnerException
 
 
 class Learner:
@@ -24,8 +25,9 @@ class Learner:
         self._config = config
         self._mapper = Mapper('Learner')
         self._model_factory = ModelFactory(self._config)
+        self._model = None
 
-    def learn(self, X: DataFrame, Y: DataFrame, input_size:int= None, output_size:int=None) -> AbstractModel:
+    def learn(self, X: DataFrame, Y: DataFrame, input_size: int = None, output_size: int = None) -> AbstractModel:
         """
             Learns based on the configuration provided.
         :return: learnt model and statistics
@@ -50,6 +52,7 @@ class Learner:
         model.train(X, Y, train_time)
 
         # returns it
+        self._model = model
         return model
 
     def _convert_train_time(self, time: str) -> int:
@@ -71,13 +74,29 @@ class Learner:
                 crt_count = 0
 
         seconds = mapping.get("s", 0) + mapping.get("m", 0) * 60 + \
-                    mapping.get("h", 0) * (60 * 60) + mapping.get("d", 0) * 24 * 60 * 60
+                  mapping.get("h", 0) * (60 * 60) + mapping.get("d", 0) * 24 * 60 * 60
 
         return seconds
+
+    def get_model(self) -> AbstractModel:
+        """
+            Returns the model after training.
+        :return: the model that has been trained with the learn method
+        :exception LearnerException if this method is called before learn is called
+        """
+        if self._model is None:
+            raise LearnerException("Could not retrieve model before 'learn' is called.")
+
+        return self._model
 
     def get_mapper(self) -> 'Mapper':
         """
             Returns the mapper that contains data about training
         :return: the mapper
         """
+        model_map = None
+        if not (self._model is None):
+            model_map = self._model.to_dict()
+
+        self._mapper.set("MODEL", model_map)
         return self._mapper
