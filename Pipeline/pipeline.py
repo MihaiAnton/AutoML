@@ -29,6 +29,17 @@ class Pipeline:
         Pipeline steps:
             1. Data cleaning & feature engineering module.
             2. #TODO complete with other modules
+
+
+        Methods:
+            - process: processes a dataset according to the specifications in the config file
+            - convert: converts data according to the rules learnt from a previous process call
+            - learn: given a dataset and a configuration it fits a model to the data
+            - predict: provided that the pipeline has previously learnt a model, it predicts the output of data
+            - fit: does all the steps activated in the configuration file
+            - save: saves the pipeline (including the model) to a file
+            - get_model: returns the model (none if it has not learnt a model previously)
+            - load_pipeline(defined outside the class): reads a saved pipeline from a file and returns it
     """
 
     def __init__(self, config: dict = None, mapper_file: str = None, mapper: 'Mapper' = None,
