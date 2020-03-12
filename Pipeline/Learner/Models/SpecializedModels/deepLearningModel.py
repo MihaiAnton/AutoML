@@ -17,6 +17,7 @@ from torch import save as torch_save
 from torch import load as torch_load
 
 from .modelTypes import DEEP_LEARNING_MODEL as MODEL_TYPE
+from ..constants import AVAILABLE_TASKS, CLASSIFICATION, REGRESSION
 
 
 class ModuleList(object):
@@ -67,12 +68,14 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_MOMENTUM = 0.4
     TEMPORARY_FILE = ".tmp_model_file"
 
-    def __init__(self, in_size, out_size, config: dict = None, predicted_name: list = None, dictionary=None):
+    def __init__(self, in_size, out_size, task: str = "", config: dict = None, predicted_name: list = None,
+                 dictionary=None):
         """
             Initializes a deep learning model.
             :param in_size: the input size of the neural network
             :param out_size: the predicted size of the network
             :param config: the configuration map
+            :param task: the type of learning that is wanted to be done
         """
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
@@ -85,9 +88,12 @@ class DeepLearningModel(AbstractModel):
         if predicted_name is None:
             self._predicted_name = ["predicted_{}".format(i) for i in range(out_size)]
 
+        # configuration parameters
+        self._task = task
         self._config = config
         self._input_count = in_size
         self._output_count = out_size
+        self._classification_mapping = {}
 
         # create a neural network, named model
         self._model = self.create_model()
@@ -110,9 +116,15 @@ class DeepLearningModel(AbstractModel):
         numpy_array = np.asarray(output.detach())
 
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
+
+        if self._task == CLASSIFICATION:
+            mapping = self._classification_mapping["mapping"]
+            df = self._from_categorical(df, mapping)
+        # check if the model is set for categorical purpose
+
         return df
 
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = None):
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2):
         """
             Trains the model according to the specifications provided.
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
@@ -121,6 +133,23 @@ class DeepLearningModel(AbstractModel):
         :param train_time: the training time in seconds, default 10 minutes
         :return: self (trained model)
         """
+        # define the task
+        if self._task not in AVAILABLE_TASKS:
+            self._task = self._determine_task_type(Y)
+
+        # if the task is classification - modify the Y column and create a mapping between actual columns and encodings
+        if self._task == CLASSIFICATION:
+            self._classification_mapping["mapping"] = self._categorical_mapping(Y)
+            self._classification_mapping["previous_out_layers"] = self._output_count
+            self._classification_mapping["previous_predicted_names"] = self._predicted_name
+            self._predicted_name = list(self._classification_mapping["mapping"].keys())
+            self._classification_mapping["actual_out_layers"] = len(
+                list(self._classification_mapping.get("mapping", {}).keys()))
+            Y = self._to_categorical(Y, self._classification_mapping["mapping"])
+            self._output_count = self._classification_mapping["actual_out_layers"]
+            self._model = self.create_model()
+
+
         # define an optimizer
         # should be defined in configuration - a default one will be used now for the demo
         if not self._train_mode:
@@ -148,7 +177,10 @@ class DeepLearningModel(AbstractModel):
         if validation_split is None:
             x_train = tensor(X.to_numpy()).float()
             y_train = tensor(Y.to_numpy()).float()
+
+            print("Training on {} samples...".format(len(y_train)))
         else:
+
             if type(validation_split) != float:
                 raise DeepLearningModelException("Parameter validation_split should be None or float in range [0,1)")
             if validation_split < 0 or validation_split >= 1:
@@ -162,6 +194,8 @@ class DeepLearningModel(AbstractModel):
             x_val = tensor(x_val).float()
             y_train = tensor(y_train).float()
             y_val = tensor(y_val).float()
+
+            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val)))
 
         # prepare for time handling
         seconds_count = 0
@@ -188,7 +222,14 @@ class DeepLearningModel(AbstractModel):
 
                 optimizer.zero_grad()
                 output = self._model(batch_x)
-                loss = criterion(output, batch_y)
+
+                losses = []
+                for out in range(len(self._predicted_name)):
+                    losses.append(criterion(output[:,out], batch_y[:,out]))
+
+                loss = losses[0]
+                for i in range(1, len(losses)):
+                    loss = loss + losses[i]
 
                 loss.backward()
                 optimizer.step()
@@ -249,7 +290,7 @@ class DeepLearningModel(AbstractModel):
 
     def create_model(self):
         """
-            Cretaes a neural network as specified in the configuration
+            Creates a neural network as specified in the configuration
         :return:
         """
 
@@ -389,12 +430,21 @@ class DeepLearningModel(AbstractModel):
         net = Network()
         return net
 
+    def model_type(self) -> str:
+        """
+            Returns the model type; in this case -> DEEP_LEARNING_MODEL
+        :return:
+        """
+        return MODEL_TYPE
+
     def to_dict(self) -> dict:
         """
             Returns a dictionary representation of the model for further file saving.
         :return: dictionary with model encoding
-        """
 
+
+        """
+        # !!! should match _init_from_dictionary loading format
         # get the model data
         model = pickle.dumps(self._model.state_dict())
 
@@ -405,6 +455,8 @@ class DeepLearningModel(AbstractModel):
                 "CONFIG": self._config,
                 "INPUT_COUNT": self._input_count,
                 "OUTPUT_COUNT": self._output_count,
+                "TASK": self._task,
+                "CLASSIFICATION_MAPPING": self._classification_mapping
             }
         }
 
@@ -412,13 +464,6 @@ class DeepLearningModel(AbstractModel):
             "MODEL_TYPE": self.model_type(),
             "MODEL_DATA": data
         }
-
-    def model_type(self) -> str:
-        """
-            Returns the model type; in this case -> DEEP_LEARNING_MODEL
-        :return:
-        """
-        return MODEL_TYPE
 
     def _init_from_dictionary(self, d: dict):
         """
@@ -429,7 +474,7 @@ class DeepLearningModel(AbstractModel):
         :param d: dictionary previously created by to_dict
         :return: None
         """
-
+        # !!! should match to_dict loading format
         data = d.get("METADATA")
         model = d.get("MODEL")
 
@@ -438,6 +483,8 @@ class DeepLearningModel(AbstractModel):
         self._config = data.get("CONFIG")
         self._input_count = data.get("INPUT_COUNT")
         self._output_count = data.get("OUTPUT_COUNT")
+        self._task = data.get("TASK")
+        self._classification_mapping = data.get("CLASSIFICATION_MAPPING")
 
         # init the model
         self._model = self.create_model()

@@ -37,26 +37,30 @@ print("Start AutoML")
 
 data = read_csv("Datasets/titanic_converted.csv")
 
-pipeline = Pipeline(dynamic=True)  # create a pipeline
-model = pipeline(data)            # learn from the data
+pipeline = Pipeline()  # create a pipeline
+model = pipeline.learn(data, y_column="Survived")            # learn from the data
+model.save("tmp_files/model")
+pipeline.save("tmp_files/pipeline.bin")
+
+del pipeline
+del model
+
+pipeline = load_pipeline("tmp_files/pipeline.bin")
+model = pipeline.learn(data)
 
 
 
 
 
-model.save("model")
-model = load_model("model")  # reload the model
+
 data = data.drop("Survived", axis=1)  # read the data and drop the predicted col
 
-pred1 = model.predict(data)  # create a prediction
-pipeline.save("pipeline.bin")
-del pipeline
 
-pipeline = load_pipeline("pipeline.bin")
-model2 = pipeline.get_model()
+model = load_model("tmp_files/model")  # reload the model
+pipeline = load_pipeline("tmp_files/pipeline.bin")
 
-
-pred2 = model2.predict(data)  # generate a second prediction
+pred1 = model.predict(data)
+pred2 = pipeline.predict(data)  # generate a second prediction
 
 diff = (pred1 != pred2).any()[0]  # the 2 predictions should be identical
 

@@ -58,15 +58,16 @@
   "TRAINING": true,
   "TRAINING_CONFIG": {
     "TYPE": "default",
-    "TIME": "3s",
+    "TASK": "",
+    "TIME": "30s",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "neural_network",
     "DEFAULT_MODEL_CONFIG": {
       "OPTIMIZER" : "Adam",
-      "LEARNING_RATE": 0.002,
+      "LEARNING_RATE": 0.001,
       "MOMENTUM": 0.1,
-      "HIDDEN_LAYERS": [32,16],
+      "HIDDEN_LAYERS": "smooth",
       "ACTIVATIONS": "sigmoid",
       "DROPOUT": 0.1
     },

@@ -100,6 +100,8 @@ class Pipeline:
             else:
                 self._model = load_model(model_map)
 
+            self._learner = Learner(self._config.get("TRAINING_CONFIG", {}), model=self._model)
+
         # set status of pipeline
         current_status = self._mapper.get(self.STATE_MACRO, False)
         if current_status is False:
@@ -185,14 +187,13 @@ class Pipeline:
         if y_column is None:
             y_column = self._config.get("TRAINING_CONFIG", {}).get("PREDICTED_COLUMN_NAME", "undefined")
 
-        self._record_data_information(data, "learn", )
-
         result = None
         # 2. Model learning
         if self._config.get("TRAINING", False):
             x, y = Splitter.XYsplit(data, y_column)
 
             result = self._learner.learn(X=x, Y=y)
+
 
         end = time.time()
         print("Learnt in {0:.4f} seconds.".format(end - start))

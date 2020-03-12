@@ -19,7 +19,7 @@ class Learner:
             - get_mapper: gets the mapper with attributes
     """
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: dict = None, model: 'AbstractModel' = None):
         """
             Creates a learner instance based on the configuration file.
             :param config: dictionary with the configurations for the learning module
@@ -32,7 +32,7 @@ class Learner:
         self._config = config
         self._mapper = Mapper('Learner')
         self._model_factory = ModelFactory(self._config)
-        self._model = None
+        self._model = model
 
     def learn(self, X: DataFrame, Y: DataFrame, input_size: int = None, output_size: int = None) -> AbstractModel:
         """
@@ -52,7 +52,9 @@ class Learner:
         self._mapper.set("output_size", output_size)
 
         # creates a model
-        model = self._model_factory.create_model(in_size=input_size, out_size=output_size)
+        model = self._model
+        if model is None:
+            model = self._model_factory.create_model(in_size=input_size, out_size=output_size)
 
         # trains the model
         train_time = self._convert_train_time(self._config.get("TIME", "10m"))

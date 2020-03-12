@@ -71,3 +71,95 @@ class AbstractModel(ABC):
             Returns the model type from available model types in file "model_types.py"
         :return: string with the model type
         """
+
+    @staticmethod
+    def _determine_task_type(Y: DataFrame) -> str:
+        """
+            Determines heuristically the task type given the output variable.
+        :return: string from constants.py/AVAILABLE_TASKS with the specific task
+        """
+
+        total_number = len(Y)
+        unique_number = len(Y.drop_duplicates(ignore_index=True))
+
+        if unique_number / total_number > 0.08:  # there have to be at least 8% unique values from the total number
+            return "regression"  # of values in order to be considered regression
+        else:
+            return "classification"
+
+    @staticmethod
+    def _categorical_mapping(data: DataFrame) -> dict:
+        """
+            Checks all the unique columns, creates categorical features and returns mapping
+            Return type dict {
+                new_col_name : {
+                    column1: value1,
+                    column2: value2
+                    ...
+                }
+                ...
+            }
+            The returned type represents how an entry should be in order to be part of one column
+        :param data: the output variable to be encoded
+        :return: the mapping dictionary
+        """
+        class_mappings = {}
+
+        uniques = data.drop_duplicates(ignore_index=True)  # get the unique rows
+
+        for row in uniques.iterrows():
+            row = row[1]
+            values = {}
+            for col in data.columns.to_list():  # for each unique row get the values that determine it
+                values[col] = row[col]
+
+            new_class_name = '&'.join([key + "_" + str(values[key]) for key in values.keys()])  # get a new class
+                                                                                                # name reuniting all
+            class_mappings[new_class_name] = values  # set the values to the new created class name
+
+        return class_mappings
+
+    @staticmethod
+    def _to_categorical(data: DataFrame, mapping: dict) -> DataFrame:
+        """
+            According to the dictionary previously created, returns a converted dataset
+        :param mapping: the mapping dictionary created with method _categorical_mapping on similar dataset
+        :param data: dataset to be converted
+        :return: converted dataset
+        """
+        new_columns = list(mapping.keys())
+        new_values = []
+
+        for row in data.iterrows():                     # for each entry in the dataset
+
+            final_column = None
+            for possible_col in sorted(new_columns):    # check for every possible column
+                ok = True
+                for column in list(mapping[possible_col].keys()):   # for evey column, check if it matches the condition
+                    if mapping[possible_col][column] != row[1][column]:
+                        ok = False
+                        break
+
+                if ok:                                              # if it matches, set the column
+                    final_column = possible_col
+                    break
+
+            d = {col: 0 for col in new_columns}                     # set the row
+            if not (final_column is None):
+                d[final_column] = 1
+            new_values.append(d)
+
+        return DataFrame(new_values)
+
+    @staticmethod
+    def _from_categorical(data: DataFrame, mapping: dict) -> DataFrame:
+        """
+            Based on the mapping computed with _categorial_mapping function on a similar dataset,
+        converts the encoded data into initial data
+        :param data: dataset to be converted back to the inital form
+        :param mapping: the mapping computed with _categorical mapping function
+        :return: reverted dataset
+        """
+        categories = data.idxmax(axis=1)                            # get the categories
+        return DataFrame([mapping[c] for c in categories])          # easily construct the dataframe from list of
+                                                                    # dictionaries
