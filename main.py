@@ -37,8 +37,13 @@ print("Start AutoML")
 
 data = read_csv("Datasets/titanic_converted.csv")
 
-pipeline = Pipeline()  # create a pipeline
-model = pipeline.learn(data)            # learn from the data
+pipeline = Pipeline(dynamic=True)  # create a pipeline
+model = pipeline(data)            # learn from the data
+
+
+
+
+
 model.save("model")
 model = load_model("model")  # reload the model
 data = data.drop("Survived", axis=1)  # read the data and drop the predicted col

@@ -42,8 +42,18 @@ class Pipeline:
             - load_pipeline(defined outside the class): reads a saved pipeline from a file and returns it
     """
 
+    # define possible states - the state in which the pipeline is at a given moment
+    DYNAMIC_CALL = False  # calling the object behaves differently depending on the state of the pipeline if true
+    # if set to false, the flow will respect the configuration
+    STATE_MACRO = "PIPELINE_STATUS"
+    RAW_STATE = "RAW_STATE"  # the pipeline is new and no operation has been done to it
+    PROCESSED_STATE = "PROCESSED_STATE"  # the pipeline has been used to process data
+    LEARNT_STATE = "LEARNT_STATE"
+    CONVERTED_STATE = "CONVERTED_STATE"  # the pipeline has been last used to convert data
+    PREDICTED_STATE = "PREDICTED_STATE"  # the pipeline has last been used to predict data
+
     def __init__(self, config: dict = None, mapper_file: str = None, mapper: 'Mapper' = None,
-                 default_config_path: str = None):
+                 default_config_path: str = None, **kwargs):
         """
             Inits the pipeline
         :param config: configuration dictionary
@@ -51,11 +61,15 @@ class Pipeline:
         :param mapper:the dictionary (in Mapper format) containing the data previously saved by the Pipeline instance
         :param default_config_path: if the pipeline is used with a configuration file located elsewhere than
                     the default location; if provided, this path will be used when creating the configuration
+        :param kwargs
+                - include "dynamic=True" or "dynamic_call=True" if the argument list to enable dynamic pipeline call
         Usage:
             if provided any data, the Pipeline will init itself from that dictionary
             otherwise, if provided a config it will use that, if not it will try to read the config from file
                        if a mapper file is provided the processor will be initialized with that
         """
+        if kwargs.get("dynamic_call", False) or kwargs.get("dynamic", False):
+            self.DYNAMIC_CALL = True
 
         # data processing attributes
         if mapper is None:  # initialized by the user
@@ -76,6 +90,7 @@ class Pipeline:
             self._model = None
 
         else:  # initialized by the load_pipeline method
+            self._mapper = mapper
             self._config = mapper.get("CONFIG", default={})
             self._processor = Processor(self._config, data=mapper.get_mapper("PROCESSOR_DATA", {}))
 
@@ -85,6 +100,38 @@ class Pipeline:
             else:
                 self._model = load_model(model_map)
 
+        # set status of pipeline
+        current_status = self._mapper.get(self.STATE_MACRO, False)
+        if current_status is False:
+            self._mapper.set(self.STATE_MACRO, self.RAW_STATE)
+
+    def _record_data_information(self, data: DataFrame, source: str, *args, **kwargs) -> None:
+        """
+            Maps metadata about the data fed into the pipeline.
+        :param data: DataFrame containing the dataset
+        :param source: string containing the source of the data
+                        - data is recorded on process() and on learn(), to be used later in convert() and predict()
+                        - source should be either "process" or "learn"
+        :return: None
+        """
+        info = self._mapper.get("DATA_METADATA", default={})
+
+        if source == "process":
+            new_info = {
+                "shape": data.shape,
+                "columns": data.columns.to_list()
+            }
+        elif source == "learn":
+            new_info = {
+                "shape": data.shape,
+                "y_column": kwargs.get("y_column", "undefined")
+            }
+        else:
+            new_info = {}
+
+        info[source] = new_info
+        self._mapper.set("DATA_METADATA", info)
+
     def process(self, data: DataFrame) -> DataFrame:
         """
             Processes the data according to the configuration in the config file
@@ -92,7 +139,7 @@ class Pipeline:
         :return: DataFrame with the modified data
         """
         start = time.time()
-
+        self._record_data_information(data, "process")
         result = data
 
         # 1. Data processing
@@ -101,6 +148,7 @@ class Pipeline:
 
         end = time.time()
         print("Processed in {0:.4f} seconds.".format(end - start))
+        self._mapper.set(self.STATE_MACRO, self.PROCESSED_STATE)
         return result
 
     def convert(self, data: DataFrame) -> DataFrame:
@@ -121,6 +169,7 @@ class Pipeline:
         result = self._processor.convert(data)
         end = time.time()
         print("Converted in {0:.4f} seconds.".format(end - start))
+        self._mapper.set(self.STATE_MACRO, self.CONVERTED_STATE)
         return result
 
     def learn(self, data: DataFrame, y_column: str = None) -> AbstractModel:
@@ -131,9 +180,12 @@ class Pipeline:
         :return: trained model or None if trained is not set to true in config
         """
         start = time.time()
+        self._record_data_information(data, "learn")
 
         if y_column is None:
             y_column = self._config.get("TRAINING_CONFIG", {}).get("PREDICTED_COLUMN_NAME", "undefined")
+
+        self._record_data_information(data, "learn", )
 
         result = None
         # 2. Model learning
@@ -145,6 +197,7 @@ class Pipeline:
         end = time.time()
         print("Learnt in {0:.4f} seconds.".format(end - start))
         self._model = result
+        self._mapper.set(self.STATE_MACRO, self.LEARNT_STATE)
         return result
 
     def predict(self, data: DataFrame) -> DataFrame:
@@ -157,6 +210,7 @@ class Pipeline:
         if self._model is None:
             raise PipelineException("Could not predict unless a training has been previously done.")
 
+        self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
         return self._model.predict(data)
 
     def fit(self, data: DataFrame):
@@ -181,11 +235,43 @@ class Pipeline:
         :param data: DataFrame with raw data
         :return: data/ cleaned data/ processed data/ trained model ( based on the choices in the config file)
         """
-        return self.fit(data)
+        if self.DYNAMIC_CALL is False:
+            return self.fit(data)
 
-    def save(self, file: str) -> 'Pipeline':
+        else:  # decide what to do depending on the state
+            metadata = self._mapper.get("DATA_METADATA", {})
+            state = self._mapper.get(self.STATE_MACRO, self.RAW_STATE)
+
+            if state == self.RAW_STATE:  # follow the configuration
+                print("Pipeline Dynamic Call: fit()")
+                return self.fit(data)
+
+            if data.shape == metadata.get("process", {}).get("shape", ()):  # probably a conversion is wanted
+                if state == self.LEARNT_STATE:
+                    print("Pipeline Dynamic Call: learn()")
+                    return self.learn(data, metadata.get("learn", {}).get("y_column", "undefined"))
+
+                else:
+                    print("Pipeline Dynamic Call: convert()")
+                    return self.convert(data)
+
+            elif data.shape[1] == metadata.get("process", {}).get("shape", (-1, -1))[1] - 1:
+                # if a model is present -> prediction ; else -> conversion
+                if self._model is None:
+                    print("Pipeline Dynamic Call: convert()")
+                    return self.convert(data)
+
+                else:
+                    print("Pipeline Dynamic Call: fit()")
+                    return self.predict(data)
+
+            return self.fit(data)
+
+    def save(self, file: str, include_model: bool = True) -> 'Pipeline':
         """
-            Saves the pipeline logic to the specified file for further reusage.
+            Saves the pipeline logic to the specified file for further re-usage.
+        :param file: the path(or name) of the save file
+        :param include_model: default true | decides whether or not the model is included in the save file with the pipeline
         :return: None
         """
         # save the initial configuration for further operations on the pipeline
@@ -196,7 +282,7 @@ class Pipeline:
 
         # save the model to file
         model_map = None
-        if not (self._model is None):
+        if include_model and (not (self._model is None)):
             model_map = self._model.to_dict()
 
         self._mapper.set("MODEL", model_map)
