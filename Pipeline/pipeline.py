@@ -210,7 +210,7 @@ class Pipeline:
         """
         if self._model is None:
             raise PipelineException("Could not predict unless a training has been previously done.")
-
+        # TODO - data should be converted if necessary
         self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
         return self._model.predict(data)
 

@@ -5,3 +5,4 @@
 """
 
 from .processor import Processor
+from .DataSplitting import Splitter

@@ -89,7 +89,7 @@ class Cleaner:
 
         for column in removed_columns:
             if column in data.columns:
-                data.drop(column, axis=1, inplace=True)
+                data = data.drop(column, axis=1)
 
         data.reset_index(drop=True, inplace=True)
         return data

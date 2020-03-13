@@ -85,8 +85,6 @@ class DeepLearningModel(AbstractModel):
             config = {}
 
         self._predicted_name = predicted_name
-        if predicted_name is None:
-            self._predicted_name = ["predicted_{}".format(i) for i in range(out_size)]
 
         # configuration parameters
         self._task = task
@@ -107,8 +105,8 @@ class DeepLearningModel(AbstractModel):
         :return: DataFrame with the output
         """
         if self._train_mode:
-            self._model.eval()
             self._train_mode = False
+            self._model.eval()
 
         processed = tensor(X.to_numpy()).float()
         output = self._model(processed)
@@ -137,6 +135,10 @@ class DeepLearningModel(AbstractModel):
         if self._task not in AVAILABLE_TASKS:
             self._task = self._determine_task_type(Y)
 
+        # define the predicted names
+        if self._predicted_name is None:
+            self._predicted_name = list(Y.columns)
+
         # if the task is classification - modify the Y column and create a mapping between actual columns and encodings
         if self._task == CLASSIFICATION:
             self._classification_mapping["mapping"] = self._categorical_mapping(Y)
@@ -149,14 +151,14 @@ class DeepLearningModel(AbstractModel):
             self._output_count = self._classification_mapping["actual_out_layers"]
             self._model = self.create_model()
 
-
-        # define an optimizer
-        # should be defined in configuration - a default one will be used now for the demo
         if not self._train_mode:
             self._train_mode = True
             self._model.train()
 
-        criterion = nn.BCELoss()
+        # define an optimizer
+        # should be defined in configuration - a default one will be used now for the demo
+        # TODO - configurable
+        criterion = nn.MSELoss()
 
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
         requested_lr = self._config.get("LEARNING_RATE", self.DEFAULT_LR)
@@ -173,7 +175,7 @@ class DeepLearningModel(AbstractModel):
         self._optimizer = optimizer
         batch_size = self._config.get("BATCH_SIZE", self.DEFAULT_BATCH_SIZE)
 
-        # create the train and validation datasets
+        # create the train and validation data sets
         if validation_split is None:
             x_train = tensor(X.to_numpy()).float()
             y_train = tensor(Y.to_numpy()).float()
@@ -203,11 +205,12 @@ class DeepLearningModel(AbstractModel):
 
         start_time = time.time()
         requested_finish = start_time + train_time
-        expected_finish = requested_finish
 
         keep_training = True
 
-        # train the model - handle time somehow
+        # train the model
+        self._model.zero_grad()
+
         while keep_training:
             keep_training = False
 
@@ -225,7 +228,7 @@ class DeepLearningModel(AbstractModel):
 
                 losses = []
                 for out in range(len(self._predicted_name)):
-                    losses.append(criterion(output[:,out], batch_y[:,out]))
+                    losses.append(criterion(output[:, out], batch_y[:, out]))
 
                 loss = losses[0]
                 for i in range(1, len(losses)):

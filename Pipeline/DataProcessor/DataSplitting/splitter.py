@@ -10,9 +10,8 @@ class Splitter:
             - XYsplit: splits the dataset into two data sets based on a y column provided
     """
 
-
     @staticmethod
-    def XYsplit(data: DataFrame, y_column: str) -> (DataFrame, DataFrame):
+    def XYsplit(data: DataFrame, y_column: str) -> tuple:
         """
             Splits the data in X and Y.
         :param data: dataframe with the dataset

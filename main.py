@@ -1,5 +1,6 @@
 from pandas import read_csv
 from Pipeline import Pipeline, load_pipeline, load_model
+from Pipeline import Splitter
 
 print("Start AutoML")
 
@@ -38,30 +39,29 @@ print("Start AutoML")
 data = read_csv("Datasets/titanic_converted.csv")
 
 pipeline = Pipeline()  # create a pipeline
-model = pipeline.learn(data, y_column="Survived")            # learn from the data
+model = pipeline.learn(data)  # learn from the data
 model.save("tmp_files/model")
-pipeline.save("tmp_files/pipeline.bin")
+
 
 del pipeline
-del model
 
-pipeline = load_pipeline("tmp_files/pipeline.bin")
-model = pipeline.learn(data)
+model = load_model("tmp_files/model")
 
-
-
+X, Y = Splitter.XYsplit(data, "Survived")
+pred = model.predict(X)
 
 
+diff = (Y != pred).sum(axis=None)
+print("Accuracy {}".format(1-(diff["Survived"]/len(X))))
 
-data = data.drop("Survived", axis=1)  # read the data and drop the predicted col
-
-
-model = load_model("tmp_files/model")  # reload the model
-pipeline = load_pipeline("tmp_files/pipeline.bin")
-
-pred1 = model.predict(data)
-pred2 = pipeline.predict(data)  # generate a second prediction
-
-diff = (pred1 != pred2).any()[0]  # the 2 predictions should be identical
-
-print("Works as expected!" if not diff else "Differences in predictions!")
+# data = data.drop("Survived", axis=1)  # read the data and drop the predicted col
+#
+# model = load_model("tmp_files/model")  # reload the model
+# pipeline = load_pipeline("tmp_files/pipeline.bin")
+#
+# pred1 = model.predict(data)
+# pred2 = pipeline.predict(data)  # generate a second prediction
+#
+# diff = (pred1 != pred2).any()[0]  # the 2 predictions should be identical
+#
+# print("Works as expected!" if not diff else "Differences in predictions!")

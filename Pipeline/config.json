@@ -6,7 +6,7 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
-      "COLUMNS_TO_REMOVE": [],
+      "COLUMNS_TO_REMOVE": ["instance_id"],
       "DO_NOT_REMOVE": [],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
@@ -16,13 +16,13 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "PREDICTED_COLUMN_NAME": "runtime",
 
 
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
       "PROCESS_CATEGORICAL_PREDICTED_COLUMN": false,
-      "DO_NOT_PROCESS": ["Id"],
+      "DO_NOT_PROCESS": [],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
 
@@ -30,9 +30,9 @@
       "CONTINUOUS_DATA_CONFIG": {
         "NUMERIC": {
           "NOT_PROCESS": false,
-          "OUTLIER_STDEV_FROM_MEAN": 5,
+          "OUTLIER_STDEV_FROM_MEAN": 4,
           "NORMALIZATION_METHOD": "z_score",
-          "POLYNOMIAL_FEATURES": 3
+          "POLYNOMIAL_FEATURES": 2
         },
         "TEXTUAL": {
           "WORD_DELIMITERS": "?!|/.,:;'-={}[]()",
@@ -60,16 +60,16 @@
     "TYPE": "default",
     "TASK": "",
     "TIME": "30s",
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "PREDICTED_COLUMN_NAME": "runtime",
 
     "DEFAULT_MODEL": "neural_network",
     "DEFAULT_MODEL_CONFIG": {
       "OPTIMIZER" : "Adam",
-      "LEARNING_RATE": 0.001,
-      "MOMENTUM": 0.1,
+      "LEARNING_RATE": 0.1,
+      "MOMENTUM": 0.9,
       "HIDDEN_LAYERS": "smooth",
-      "ACTIVATIONS": "sigmoid",
-      "DROPOUT": 0.1
+      "ACTIVATIONS": "relu",
+      "DROPOUT": 0.2
     },
 
     "EVOLUTIONARY_MODEL_CONFIG": {
