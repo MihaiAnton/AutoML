@@ -21,9 +21,10 @@ class AbstractModel(ABC):
     """
 
     @abstractmethod
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600) -> 'AbstractModel':
+    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None) -> 'AbstractModel':
         """
             Trains the model with the data provided.
+        :param callbacks: a list of predefined callbacks that get called at every epoch
         :param time: time of the training session in seconds: default 10 minutes
         :param X: the independent variables in form of Pandas DataFrame
         :param Y: the dependents(predicted) values in form of Pandas DataFrame
@@ -114,7 +115,7 @@ class AbstractModel(ABC):
                 values[col] = row[col]
 
             new_class_name = '&'.join([key + "_" + str(values[key]) for key in values.keys()])  # get a new class
-                                                                                                # name reuniting all
+            # name reuniting all
             class_mappings[new_class_name] = values  # set the values to the new created class name
 
         return class_mappings
@@ -130,21 +131,21 @@ class AbstractModel(ABC):
         new_columns = list(mapping.keys())
         new_values = []
 
-        for row in data.iterrows():                     # for each entry in the dataset
+        for row in data.iterrows():  # for each entry in the dataset
 
             final_column = None
-            for possible_col in sorted(new_columns):    # check for every possible column
+            for possible_col in sorted(new_columns):  # check for every possible column
                 ok = True
-                for column in list(mapping[possible_col].keys()):   # for evey column, check if it matches the condition
+                for column in list(mapping[possible_col].keys()):  # for evey column, check if it matches the condition
                     if mapping[possible_col][column] != row[1][column]:
                         ok = False
                         break
 
-                if ok:                                              # if it matches, set the column
+                if ok:  # if it matches, set the column
                     final_column = possible_col
                     break
 
-            d = {col: 0 for col in new_columns}                     # set the row
+            d = {col: 0 for col in new_columns}  # set the row
             if not (final_column is None):
                 d[final_column] = 1
             new_values.append(d)
@@ -160,6 +161,6 @@ class AbstractModel(ABC):
         :param mapping: the mapping computed with _categorical mapping function
         :return: reverted dataset
         """
-        categories = data.idxmax(axis=1)                            # get the categories
-        return DataFrame([mapping[c] for c in categories])          # easily construct the dataframe from list of
-                                                                    # dictionaries
+        categories = data.idxmax(axis=1)  # get the categories
+        return DataFrame([mapping[c] for c in categories])  # easily construct the dataframe from list of
+        # dictionaries
