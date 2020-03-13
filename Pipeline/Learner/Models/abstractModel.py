@@ -79,7 +79,7 @@ class AbstractModel(ABC):
             Determines heuristically the task type given the output variable.
         :return: string from constants.py/AVAILABLE_TASKS with the specific task
         """
-
+        # TODO if string then classification
         total_number = len(Y)
         unique_number = len(Y.drop_duplicates(ignore_index=True))
 

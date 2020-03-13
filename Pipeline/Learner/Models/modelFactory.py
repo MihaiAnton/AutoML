@@ -1,5 +1,5 @@
 from .abstractModel import AbstractModel
-from .SpecializedModels.deepLearningModel import DeepLearningModel
+from .SpecializedModels import DeepLearningModel, RandomForestModel
 from ...Exceptions.learnerException import ModelSelectionException
 
 
@@ -54,13 +54,22 @@ class ModelFactory:
         default_model_type = self._config.get("DEFAULT_MODEL", "neural_network")
 
         if default_model_type == "neural_network":
-            model = DeepLearningModel(in_size, out_size, config=self._config.get("DEFAULT_MODEL_CONFIG", {}))
+            model = DeepLearningModel(in_size, out_size, config=self._config.get("NEURAL_NETWORK_CONFIG", {}))
+
+        elif default_model_type == "random_forest":
+            model = RandomForestModel(config=self._config.get("RANDOM_FOREST_CONFIG", {}))
 
         else:  # TODO add other methods
             pass
 
         return model
     #######################################################  TYPE: default   #######################################################
+
+
+
+
+
+
 
     # ------------------------------------------------------  TYPE: evolutionary   ------------------------------------------------------
     # TODO later

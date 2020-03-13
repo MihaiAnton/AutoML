@@ -6,7 +6,7 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
-      "COLUMNS_TO_REMOVE": ["instance_id"],
+      "COLUMNS_TO_REMOVE": ["PassengerId"],
       "DO_NOT_REMOVE": [],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
@@ -16,13 +16,13 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "runtime",
+    "PREDICTED_COLUMN_NAME": "Survived",
 
 
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
       "PROCESS_CATEGORICAL_PREDICTED_COLUMN": false,
-      "DO_NOT_PROCESS": [],
+      "DO_NOT_PROCESS": ["PassengerId"],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
 
@@ -32,11 +32,11 @@
           "NOT_PROCESS": false,
           "OUTLIER_STDEV_FROM_MEAN": 4,
           "NORMALIZATION_METHOD": "z_score",
-          "POLYNOMIAL_FEATURES": 2
+          "POLYNOMIAL_FEATURES": 5
         },
         "TEXTUAL": {
           "WORD_DELIMITERS": "?!|/.,:;'-={}[]()",
-          "MAX_GENERATED_FEATURES": 3
+          "MAX_GENERATED_FEATURES": 12
         }
       },
 
@@ -59,11 +59,15 @@
   "TRAINING_CONFIG": {
     "TYPE": "default",
     "TASK": "",
-    "TIME": "30s",
-    "PREDICTED_COLUMN_NAME": "runtime",
+    "TIME": "3s",
+    "PREDICTED_COLUMN_NAME": "Survived",
 
-    "DEFAULT_MODEL": "neural_network",
-    "DEFAULT_MODEL_CONFIG": {
+    "DEFAULT_MODEL": "random_forest",
+    "EVOLUTIONARY_MODEL_CONFIG": {
+      "MODELS": ["neural_network"]
+    },
+
+    "NEURAL_NETWORK_CONFIG": {
       "OPTIMIZER" : "Adam",
       "LEARNING_RATE": 0.1,
       "MOMENTUM": 0.9,
@@ -72,12 +76,23 @@
       "DROPOUT": 0.2
     },
 
-    "EVOLUTIONARY_MODEL_CONFIG": {
-      "MODELS": ["neural_network"]
+    "RANDOM_FOREST_CONFIG": {
+      "CLASSIFIER": {
+        "N_ESTIMATORS": 100,
+        "CRITERION": "gini",
+        "MIN_SAMPLES_SPLIT": 2,
+        "MAX_FEATURES": "sqrt"
+      },
+
+      "REGRESSOR": {
+        "N_ESTIMATORS": 100,
+        "CRITERION": "mse",
+        "MIN_SAMPLES_SPLIT": 2,
+        "MAX_FEATURES": "sqrt"
+      }
     }
+
   }
-
-
 }
 
 

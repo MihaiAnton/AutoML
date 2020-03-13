@@ -24,6 +24,20 @@ class DeepLearningModelException(Exception):
         return "NeuralNetworkModelException: {}.".format(self._message)
 
 
+class RandomForestModelException(Exception):
+    """
+        Generic exception for the neural network
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+        self._message = message
+
+    def __repr__(self):
+        return "RandomForestModelException: {}.".format(self._message)
+
+
+
 class ModelLoaderException(Exception):
     """
         Generic exception for the neural network

@@ -85,7 +85,11 @@
     "PREDICTED_COLUMN_NAME": "Price",           ---> <output_column_name> - the name of the predicted column
 
     "DEFAULT_MODEL": "neural_network",          ---> "neural_network" - the default training method (TYPE should be "default")
-    "DEFAULT_MODEL_CONFIG": {                   ---> if TYPE is "default", provide this object
+    "EVOLUTIONARY_MODEL_CONFIG": {              ---> if TYPE is "evolutionary", provide this object
+      "MODELS": ["neural_network"]              ---> list of allowed models - the models to search for
+    }
+
+    "NEURAL_NETWORK_CONFIG": {                   ---> if TYPE is "default", provide this object
       "OPTIMIZER" : "Adam",                     ---> "Adam"/"SGD" - the optimizer used for the neural network
       "LEARNING_RATE": 0.002,                   ---> positive float number - the learning rate to be used in training
       "MOMENTUM": 0.1,                          ---> positive float number - if OPTIMIZER is "SGD" - provide this
@@ -98,9 +102,6 @@
       "DROPOUT": 0.1                            ---> positive float or list of floats - the general dropout used or dropout for each layer
     },
 
-    "EVOLUTIONARY_MODEL_CONFIG": {              ---> if TYPE is "evolutionary", provide this object
-      "MODELS": ["neural_network"]              ---> list of allowed models - the models to search for
-    }
   }
 
 }
