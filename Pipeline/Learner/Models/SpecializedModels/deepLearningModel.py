@@ -157,7 +157,7 @@ class DeepLearningModel(AbstractModel):
 
         # define an optimizer
         # should be defined in configuration - a default one will be used now for the demo
-        # TODO - configurable
+        # TODO - configurable criterion
         criterion = nn.MSELoss()
 
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
@@ -478,6 +478,7 @@ class DeepLearningModel(AbstractModel):
         :return: None
         """
         # !!! should match to_dict loading format
+        d = d.get("MODEL_DATA")
         data = d.get("METADATA")
         model = d.get("MODEL")
 
