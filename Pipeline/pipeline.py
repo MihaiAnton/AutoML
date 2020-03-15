@@ -107,6 +107,8 @@ class Pipeline:
         if current_status is False:
             self._mapper.set(self.STATE_MACRO, self.RAW_STATE)
 
+        self._mapper.set("CONVERSION_DONE", False)
+
     def _record_data_information(self, data: DataFrame, source: str, *args, **kwargs) -> None:
         """
             Maps metadata about the data fed into the pipeline.
@@ -145,9 +147,12 @@ class Pipeline:
         result = data
 
         # 1. Data processing
+
         if self._config.get("DATA_PROCESSING", False):
             result = self._processor.process(result)
 
+        self._mapper.set("X_COLUMNS_PROCESS", list(data.columns))
+        self._mapper.set("CONVERSION_DONE", True)
         end = time.time()
         print("Processed in {0:.4f} seconds.".format(end - start))
         self._mapper.set(self.STATE_MACRO, self.PROCESSED_STATE)
@@ -191,9 +196,9 @@ class Pipeline:
         # 2. Model learning
         if self._config.get("TRAINING", False):
             x, y = Splitter.XYsplit(data, y_column)
+            self._mapper.set("X_COLUMNS_TRAIN", list(data.columns))
 
             result = self._learner.learn(X=x, Y=y)
-
 
         end = time.time()
         print("Learnt in {0:.4f} seconds.".format(end - start))
@@ -210,9 +215,33 @@ class Pipeline:
         """
         if self._model is None:
             raise PipelineException("Could not predict unless a training has been previously done.")
-        # TODO - data should be converted if necessary
-        self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
-        return self._model.predict(data)
+
+        columns = list(data.columns)
+        columns.sort()
+
+        learnt_columns = self._mapper.get("X_COLUMNS_TRAIN", [])
+        learnt_columns.sort()
+
+        if columns == learnt_columns:  # the columns to predicts are the learnt columns
+            self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
+            return self._model.predict(data)
+
+        elif self._mapper.get("CONVERSION_DONE", False):  # the columns differ (maybe conversion has to be done)
+            processed_cols = self._mapper.get("X_COLUMNS_PROCESS", [])
+            processed_cols.sort()
+
+            if columns == processed_cols:
+                converted = self.convert(data)
+                return self.predict(converted)
+
+            else:
+                raise PipelineException("Expected conversion from columns {}; received {}"
+                                        .format(self._mapper.get("X_COLUMNS_PROCESS", []), list(data.columns)))
+
+        else:
+            raise PipelineException("Expected model with columns {}; received {}"
+                                    .format(self._mapper.get("X_COLUMNS_TRAIN", []), list(data.columns)))
+
 
     def fit(self, data: DataFrame):
         """
@@ -310,7 +339,8 @@ class Pipeline:
         if path is None:
             path = os.path.join(os.getcwd(), 'Pipeline', 'config.json')
 
-        # TODO add error handling for incorrect path
+        if not os.path.exists(path):
+            raise PipelineException("Configuration Json file could not be parsed from source {}.".format(path))
 
         # print(path)
         with open(path) as json_file:
