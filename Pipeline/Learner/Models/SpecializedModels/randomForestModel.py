@@ -21,8 +21,6 @@ class RandomForestModel(AbstractModel):
                  dictionary=None):
         """
             Initializes a random forest model.
-        :param in_size: the input size of the model
-        :param out_size: the size of the predicted data
         :param config: the configuration dictionary: expected to receive the RANDOM_FOREST_CONFIG dictionary
         :param predicted_name: the name of the the predicted column
         :param dictionary:
@@ -96,7 +94,8 @@ class RandomForestModel(AbstractModel):
             epoch_start = time.time()
 
             # start a random forest model
-            model = self._create_model()
+            if self._model is None:
+                model = self._create_model()
             model.fit(x_train, y_train.ravel())
 
             # compare to the actual model and update if necessary
@@ -247,7 +246,6 @@ class RandomForestModel(AbstractModel):
         """
         # !!! should match _init_from_dictionary loading format
         # get the model data
-        # TODO get model encoding
         model = pickle.dumps(self._model)
 
         data = {
@@ -276,10 +274,10 @@ class RandomForestModel(AbstractModel):
         mdata = data.get("METADATA")
         model = data.get("MODEL")
 
-        #init the data
+        # init the data
         self._predicted_name = mdata.get("PREDICTED_NAME")
         self._config = mdata.get("CONFIG")
         self._task = mdata.get("TASK")
 
-        #init the model
+        # init the model
         self._model = pickle.loads(model)
