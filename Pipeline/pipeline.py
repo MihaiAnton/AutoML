@@ -242,7 +242,6 @@ class Pipeline:
             raise PipelineException("Expected model with columns {}; received {}"
                                     .format(self._mapper.get("X_COLUMNS_TRAIN", []), list(data.columns)))
 
-
     def fit(self, data: DataFrame):
         """
             Completes the pipeline as specified in the configuration file.
