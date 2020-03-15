@@ -207,13 +207,16 @@ class RandomForestModel(AbstractModel):
         config = self._config.get("CLASSIFIER", {})
 
         self._criterion = config.get("CRITERION", 'gini')
+        max_features = config.get("MAX_FEATURES", 'sqrt')
+        if max_features == "none":
+            max_features = None
 
         return RandomForestClassifier(
             n_estimators=config.get("N_ESTIMATORS", 100),
             criterion=config.get("CRITERION", 'gini'),
             min_samples_split=config.get("MIN_SAMPLES_SPLIT", 2),
             bootstrap=True,
-            max_features=config.get("MAX_FEATURES", 'sqrt'),
+            max_features=max_features,
             n_jobs=-1,  # using all the processors
             random_state=randint(1, 1024),
             ccp_alpha=random() * 0.4
@@ -227,13 +230,16 @@ class RandomForestModel(AbstractModel):
         config = self._config.get("REGRESSOR", {})
 
         self._criterion = config.get("CRITERION", 'mse')
+        max_features = config.get("MAX_FEATURES", 'sqrt')
+        if max_features == "none":
+            max_features = None
 
         return RandomForestRegressor(
             n_estimators=config.get("N_ESTIMATORS", 100),
             criterion=config.get("CRITERION", 'mse'),
             min_samples_split=config.get("MIN_SAMPLES_SPLIT", 2),
             bootstrap=True,
-            max_features=config.get("MAX_FEATURES", 'sqrt'),
+            max_features=max_features,
             n_jobs=-1,  # using all the processors
             random_state=randint(1, 1024),
             ccp_alpha=random() * 0.4

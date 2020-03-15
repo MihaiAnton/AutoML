@@ -80,7 +80,7 @@
                                                         \_  default: using the default model provided below
                                                          \_  evolutionary: searching for the best model as defined below
 
-    "TASK": ""                                  ---> ""/"classification"/"regression" - the type of learning that the user wants to be done ("" for automatic decision)
+    "TASK": ""                                  ---> "" / "classification" / "regression" - the type of learning that the user wants to be done ("" for automatic decision)
     "TIME": "1m",                               ---> "xd yh zm ts" - the total time of training, expressed in days(d), hours(h), minutes(m), seconds(s) (example: "1d 2h 0m 4s"
     "PREDICTED_COLUMN_NAME": "Price",           ---> <output_column_name> - the name of the predicted column
 
@@ -89,7 +89,7 @@
       "MODELS": ["neural_network"]              ---> list of allowed models - the models to search for
     }
 
-    "NEURAL_NETWORK_CONFIG": {                   ---> if TYPE is "default", provide this object
+    "NEURAL_NETWORK_CONFIG": {                  ---> if DEFAULT_MODEL is "neural_network", provide this object
       "OPTIMIZER" : "Adam",                     ---> "Adam"/"SGD" - the optimizer used for the neural network
       "LEARNING_RATE": 0.002,                   ---> positive float number - the learning rate to be used in training
       "MOMENTUM": 0.1,                          ---> positive float number - if OPTIMIZER is "SGD" - provide this
@@ -101,6 +101,30 @@
                                                          \_list of activation for each layer
       "DROPOUT": 0.1                            ---> positive float or list of floats - the general dropout used or dropout for each layer
     },
+
+    "RANDOM_FOREST_CONFIG": {                   ---> if DEFAULT_MODEL is "random_forest", provide this object
+      "CLASSIFIER": {                           ---> config for the classification random forest
+        "N_ESTIMATORS": 100,                    ---> positive integer - number of estimators to use
+        "CRITERION": "gini",                    ---> "gini" / "entropy" - the criterion used for optimisation
+        "MIN_SAMPLES_SPLIT": 2,                 ---> positive integer - required samples to split a node
+        "MAX_FEATURES": "auto"                  ---> "auto" / "sqrt" / "log2" / "none" - maximum features used in learning
+      },
+
+      "REGRESSOR": {                            ---> config for the regression random forest
+        "N_ESTIMATORS": 100,                    ---> positive integer - number of estimators to use
+        "CRITERION": "mse",                     ---> "mse" / "mae" - the criterion used for optimisation
+        "MIN_SAMPLES_SPLIT": 2,                 ---> positive integer - required samples to split a node
+        "MAX_FEATURES": "sqrt"                  ---> "auto" / "sqrt" / "log2" / "none" maximum features used in learning
+      }
+    },
+
+    "SVM_CONFIG": {                             ---> if DEFAULT_MODEL is "svm", provide this object
+      "REGULARIZATION_C": 0.4,
+      "KERNEL": "poly",
+      "POLY_DEGREE": 1,
+      "GAMMA": "scale",
+      "DECISION_FUNCTION_SHAPE": "ovo"
+    }
 
   }
 
