@@ -1,7 +1,8 @@
 import pickle
 from abc import ABC, abstractmethod
-
 from pandas import DataFrame
+
+from .constants import CLASSIFICATION, REGRESSION
 
 
 class AbstractModel(ABC):
@@ -79,14 +80,20 @@ class AbstractModel(ABC):
             Determines heuristically the task type given the output variable.
         :return: string from constants.py/AVAILABLE_TASKS with the specific task
         """
-        # TODO if string then classification
+        string_dtypes = ["object", "string"]
+        data_types = Y.dtypes
+        for column in Y.columns:
+            dtype = data_types[column]
+            if str(dtype) in string_dtypes:
+                return CLASSIFICATION
+
         total_number = len(Y)
         unique_number = len(Y.drop_duplicates(ignore_index=True))
 
         if unique_number / total_number > 0.08:  # there have to be at least 8% unique values from the total number
-            return "regression"  # of values in order to be considered regression
+            return REGRESSION  # of values in order to be considered regression
         else:
-            return "classification"
+            return CLASSIFICATION
 
     @staticmethod
     def _categorical_mapping(data: DataFrame) -> dict:
