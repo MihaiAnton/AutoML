@@ -1,7 +1,7 @@
 import pickle
 
 from .SpecializedModels.modelTypes import *
-from .SpecializedModels import DeepLearningModel, RandomForestModel
+from .SpecializedModels import DeepLearningModel, RandomForestModel, SvmModel
 from ...Exceptions.learnerException import ModelLoaderException
 
 
@@ -36,8 +36,9 @@ def load_model(source):
         model = DeepLearningModel(0, 0, dictionary=dictionary)
     elif model_type == RANDOM_FOREST_MODEL:
         model = RandomForestModel(dictionary=dictionary)
-    elif model_type == "":  # TODO add models as they are added in the SpecializedModels module
-        pass
+    elif model_type == SVM_MODEL:
+        model = SvmModel(dictionary=dictionary)
+    # TODO add models as they are added in the SpecializedModels module
     else:
         raise ModelLoaderException(
             "Could not load model of type {}".format(model_type))

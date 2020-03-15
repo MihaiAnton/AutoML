@@ -1,6 +1,7 @@
 from .abstractModel import AbstractModel
-from .SpecializedModels import DeepLearningModel, RandomForestModel
+from .SpecializedModels import DeepLearningModel, RandomForestModel, SvmModel
 from ...Exceptions.learnerException import ModelSelectionException
+from .constants import REGRESSION, CLASSIFICATION
 
 
 class ModelFactory:
@@ -13,11 +14,14 @@ class ModelFactory:
             The class is responsible for the aggregation of different deepe learning/ machine learning libraries,
         since it only has to return an AbstractModel class instance, regardless of what framework is used behind
         the train and predict methods.
+
+        :param config: the configuration dictionary, expected to get the TRAINING_CONFIG part of the config file
         """
         if config is None:
             config = {}
 
         self._config = config
+        self._task = config.get("TASK", "")
 
     def create_model(self, in_size, out_size) -> AbstractModel:
         """
@@ -54,22 +58,20 @@ class ModelFactory:
         default_model_type = self._config.get("DEFAULT_MODEL", "neural_network")
 
         if default_model_type == "neural_network":
-            model = DeepLearningModel(in_size, out_size, config=self._config.get("NEURAL_NETWORK_CONFIG", {}))
+            model = DeepLearningModel(in_size, out_size, task=self._task,
+                                      config=self._config.get("NEURAL_NETWORK_CONFIG", {}))
 
         elif default_model_type == "random_forest":
-            model = RandomForestModel(config=self._config.get("RANDOM_FOREST_CONFIG", {}))
+            model = RandomForestModel(task=self._task, config=self._config.get("RANDOM_FOREST_CONFIG", {}))
 
-        else:  # TODO add other methods
+        elif default_model_type == "svm":
+            model = SvmModel(task=self._task, config=self._config.get("SVM_CONFIG", {}))
+
+        else:  # TODO add other methods as they are added in the SpecializedModels package
             pass
 
         return model
     #######################################################  TYPE: default   #######################################################
-
-
-
-
-
-
 
     # ------------------------------------------------------  TYPE: evolutionary   ------------------------------------------------------
     # TODO later

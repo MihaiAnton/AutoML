@@ -58,11 +58,11 @@
   "TRAINING": true,
   "TRAINING_CONFIG": {
     "TYPE": "default",
-    "TASK": "",
+    "TASK": "classification",
     "TIME": "3s",
     "PREDICTED_COLUMN_NAME": "Survived",
 
-    "DEFAULT_MODEL": "random_forest",
+    "DEFAULT_MODEL": "svm",
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"]
     },
@@ -90,6 +90,14 @@
         "MIN_SAMPLES_SPLIT": 2,
         "MAX_FEATURES": "sqrt"
       }
+    },
+
+    "SVM_CONFIG": {
+      "REGULARIZATION_C": 0.4,
+      "KERNEL": "poly",
+      "POLY_DEGREE": 1,
+      "GAMMA": "scale",
+      "DECISION_FUNCTION_SHAPE": "ovo"
     }
 
   }

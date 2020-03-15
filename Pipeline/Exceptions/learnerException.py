@@ -37,6 +37,18 @@ class RandomForestModelException(Exception):
         return "RandomForestModelException: {}.".format(self._message)
 
 
+class SvmModelException(Exception):
+    """
+        Generic exception for the neural network
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+        self._message = message
+
+    def __repr__(self):
+        return "SvmModelException: {}.".format(self._message)
+
 
 class ModelLoaderException(Exception):
     """
