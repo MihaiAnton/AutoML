@@ -119,11 +119,11 @@
     },
 
     "SVM_CONFIG": {                             ---> if DEFAULT_MODEL is "svm", provide this object
-      "REGULARIZATION_C": 0.4,
-      "KERNEL": "poly",
-      "POLY_DEGREE": 1,
-      "GAMMA": "scale",
-      "DECISION_FUNCTION_SHAPE": "ovo"
+      "REGULARIZATION_C": 0.4,                  ---> positve float - the regularization parameter
+      "KERNEL": "poly",                         ---> "linear" / "poly" / "rbf" / "sigmoid" - the kernel type
+      "POLY_DEGREE": 1,                         ---> positive integer - the deree of the polynomial kernel function
+      "GAMMA": "scale",                         ---> "scale" / "auto" - kernel coefficient
+      "DECISION_FUNCTION_SHAPE": "ovo"          ---> "ovo" / "ovr" - classification algorithm
     }
 
   }
