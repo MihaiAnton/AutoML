@@ -1,7 +1,5 @@
-import json
-import os
 import pickle
-import binascii
+import warnings
 
 from pandas import DataFrame
 
@@ -13,11 +11,9 @@ from random import randrange
 import time
 import numpy as np
 import pandas as pd
-from torch import save as torch_save
-from torch import load as torch_load
 
 from .modelTypes import DEEP_LEARNING_MODEL as MODEL_TYPE
-from ..constants import AVAILABLE_TASKS, CLASSIFICATION, REGRESSION
+from ..constants import AVAILABLE_TASKS, CLASSIFICATION
 
 
 class ModuleList(object):
@@ -66,6 +62,7 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_OPTIMIZER = "SGD"
     DEFAULT_LR = 0.01
     DEFAULT_MOMENTUM = 0.4
+    DEFAULT_CRITERION = "MSE"
     TEMPORARY_FILE = ".tmp_model_file"
 
     def __init__(self, in_size, out_size, task: str = "", config: dict = None, predicted_name: list = None,
@@ -157,8 +154,18 @@ class DeepLearningModel(AbstractModel):
 
         # define an optimizer
         # should be defined in configuration - a default one will be used now for the demo
-        # TODO - configurable criterion
-        criterion = nn.MSELoss()
+        requested_criterion = self._config.get("CRITERION", self.DEFAULT_CRITERION)
+
+        if requested_criterion == "CrossEntropy":
+            criterion = nn.CrossEntropyLoss()
+        elif requested_criterion == "LogLikelihood":
+            criterion = nn.NLLLoss()
+        elif requested_criterion == "PoissonLogLikelihood":
+            criterion = nn.PoissonNLLLoss()
+        elif requested_criterion == "BCE":
+            criterion = nn.BCELoss()
+        else:
+            criterion = nn.MSELoss()
 
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
         requested_lr = self._config.get("LEARNING_RATE", self.DEFAULT_LR)
@@ -187,7 +194,8 @@ class DeepLearningModel(AbstractModel):
                 raise DeepLearningModelException("Parameter validation_split should be None or float in range [0,1)")
             if validation_split < 0 or validation_split >= 1:
                 validation_split = 0.2
-                # TODO warning - validation is out of limits, using default value 0.2
+                warnings.warn("DeepLearningModelModel: configured validation percentage is out of bounds; using "
+                              "default value 0.2", RuntimeWarning)
 
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))
@@ -322,7 +330,10 @@ class DeepLearningModel(AbstractModel):
             for layer_size in hidden_layers_requested:
                 if layer_size == 0:
                     layer_size = self.DEFAULT_LAYER_SIZE
-                    # TODO:show warning, empty hidden layer
+                    warnings.warn(
+                        "DeepLearningModel: provided layer cannot be empty; using {} as default layer size."
+                            .format(self.DEFAULT_LAYER_SIZE), RuntimeWarning)
+
                 if layer_size < 0:
                     layer_size = -layer_size
                 hidden_layers.append(layer_size)
@@ -330,7 +341,9 @@ class DeepLearningModel(AbstractModel):
 
         ### activations
         if type(activation_requested) not in [str, list]:
-            # TODO show warning - activation type provided not understood
+            warnings.warn(
+                "DeepLearningModel: provided activation {} not understood; using {} as default activation."
+                    .format(activation_requested, self.DEFAULT_ACTIVATION), RuntimeWarning)
             activation_requested = self.DEFAULT_ACTIVATION
 
         if type(activation_requested) is str:
@@ -344,7 +357,9 @@ class DeepLearningModel(AbstractModel):
             #   - if the list is of this length -> use it
             #   - otherwise, complete with the last element until the end
             if len(activation_requested) == 0:
-                # TODO show warning - provided an empty list
+                warnings.warn(
+                    "DeepLearningModel: provided empty activations list; using list of default {} activation."
+                        .format(self.DEFAULT_ACTIVATION), RuntimeWarning)
                 activations = [self.DEFAULT_ACTIVATION] * (len(hidden_layers) + 1)
             else:
                 for act in activation_requested:
@@ -356,13 +371,14 @@ class DeepLearningModel(AbstractModel):
 
         ### dropout
         if type(dropout_requested) not in [float, list]:
-            # TODO show warning - dropout type provided not understood
+            warnings.warn(
+                "DeepLearningModel: provided dropout type not understood; using {} as default dropout."
+                    .format(self.DEFAULT_DROPOUT), RuntimeWarning)
             dropout_requested = self.DEFAULT_DROPOUT
 
         if type(dropout_requested) is float:
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
-            # TODO show warning if needed: more dropouts than layers
             dropouts = dropout_requested[:(len(hidden_layers))]
 
         # create the network class
@@ -403,7 +419,7 @@ class DeepLearningModel(AbstractModel):
                     elif activations[i] == "sigmoid":
                         activation_layer = nn.Sigmoid()
                     else:
-                        activation_layer = nn.Sigmoid()  # TODO modify in identiyy
+                        activation_layer = nn.Identity()
 
                     self._activations.append(activation_layer)
                     self._activations_count += 1

@@ -3,6 +3,7 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC, SVR
 from random import randint, randrange
+import warnings
 
 from ..abstractModel import AbstractModel
 from .modelTypes import SVM_MODEL
@@ -66,7 +67,8 @@ class SvmModel(AbstractModel):
                 raise SvmModelException("Parameter validation_split should be None or float in range [0,1)")
             if validation_split < 0 or validation_split >= 1:
                 validation_split = 0.2
-                # TODO warning - validation is out of limits, using default value 0.2
+                warnings.warn("SvmModel: configured validation percentage is out of bounds; using default value 0.2",
+                              RuntimeWarning)
 
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))

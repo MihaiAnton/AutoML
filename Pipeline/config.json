@@ -68,6 +68,7 @@
     },
 
     "NEURAL_NETWORK_CONFIG": {
+      "CRITERION": "MSE",
       "OPTIMIZER" : "Adam",
       "LEARNING_RATE": 0.1,
       "MOMENTUM": 0.9,

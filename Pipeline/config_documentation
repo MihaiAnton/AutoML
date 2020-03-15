@@ -90,6 +90,7 @@
     }
 
     "NEURAL_NETWORK_CONFIG": {                  ---> if DEFAULT_MODEL is "neural_network", provide this object
+      "CRITERION": "MSE"                        ---> "MSE" / "BCE" / "CrossEntropy" / "LogLikelihood" / "PoissonLogLikelihood" - the loss function used
       "OPTIMIZER" : "Adam",                     ---> "Adam"/"SGD" - the optimizer used for the neural network
       "LEARNING_RATE": 0.002,                   ---> positive float number - the learning rate to be used in training
       "MOMENTUM": 0.1,                          ---> positive float number - if OPTIMIZER is "SGD" - provide this

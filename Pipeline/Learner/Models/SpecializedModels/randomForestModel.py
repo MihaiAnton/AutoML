@@ -1,3 +1,5 @@
+import warnings
+
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from random import randint, random, randrange
@@ -70,7 +72,8 @@ class RandomForestModel(AbstractModel):
                 raise RandomForestModelException("Parameter validation_split should be None or float in range [0,1)")
             if validation_split < 0 or validation_split >= 1:
                 validation_split = 0.2
-                # TODO warning - validation is out of limits, using default value 0.2
+                warnings.warn("RandomForestModel: configured validation percentage is out of bounds; using default value 0.2",
+                              RuntimeWarning)
 
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))
@@ -103,7 +106,7 @@ class RandomForestModel(AbstractModel):
             if validation_split is None:  # take only training score into consideration
                 criterion = model.score(x_train, y_train)
             else:
-                criterion = model.score(x_val, y_val)  # TODO change if this idea doesn't work
+                criterion = model.score(x_val, y_val)
 
             if self._task == CLASSIFICATION and (self._model_score is None or self._model_score < criterion) or \
                     self._task == REGRESSION and (self._model_score is None or self._model_score > criterion):
