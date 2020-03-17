@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from .modelTypes import DEEP_LEARNING_MODEL as MODEL_TYPE
+from .. import DEEP_LEARNING_MODEL as MODEL_TYPE
 from ..constants import AVAILABLE_TASKS, CLASSIFICATION
 
 

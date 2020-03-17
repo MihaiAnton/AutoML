@@ -26,7 +26,7 @@ class DeepLearningModelException(Exception):
 
 class RandomForestModelException(Exception):
     """
-        Generic exception for the neural network
+        Generic exception for the random forest
     """
 
     def __init__(self, message):
@@ -39,7 +39,7 @@ class RandomForestModelException(Exception):
 
 class SvmModelException(Exception):
     """
-        Generic exception for the neural network
+        Generic exception for the support vector machine
     """
 
     def __init__(self, message):
@@ -52,7 +52,7 @@ class SvmModelException(Exception):
 
 class ModelLoaderException(Exception):
     """
-        Generic exception for the neural network
+        Generic exception for the model loader
     """
 
     def __init__(self, message):
@@ -65,7 +65,7 @@ class ModelLoaderException(Exception):
 
 class LearnerException(Exception):
     """
-        Generic exception for the neural network
+        Generic exception for the learner
     """
 
     def __init__(self, message):
@@ -74,3 +74,16 @@ class LearnerException(Exception):
 
     def __repr__(self):
         return "LearnerException: {}.".format(self._message)
+
+
+class EvolutionaryModelException(Exception):
+    """
+        Generic exception for the evolutionary model
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+        self._message = message
+
+    def __repr__(self):
+        return "EvolutionaryModelException: {}.".format(self._message)

@@ -1,6 +1,6 @@
 import pickle
 
-from .SpecializedModels.modelTypes import *
+from Pipeline.Learner.Models.modelTypes import *
 from .SpecializedModels import DeepLearningModel, RandomForestModel, SvmModel
 from ...Exceptions.learnerException import ModelLoaderException
 
