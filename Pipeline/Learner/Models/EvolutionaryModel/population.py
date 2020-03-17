@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from .. import AbstractModel
+from ..abstractModel import AbstractModel
 from .chromosome import Chromosome
 
 
@@ -141,15 +141,19 @@ class Population:
         :param input_size: the input size for the data to be trained
         :param output_size: the output size of the data to be predicted
         :param config: the configuration for the evolutionary models
+                (expected EVOLUTIONARY_MODEL_CONFIG part of the config file)
         :return: the created model (untrained)
         """
-        # TODO
 
-    def _is_fitter(self, actual_fitness: float, best_fitness: float) -> bool:
+
+
+    @staticmethod
+    def _is_fitter(actual_fitness: float, best_fitness: float) -> bool:
         """
             Compare the two metrics and decides whether actual_fitness is better(fitter) than best_fitness
         :param actual_fitness: float, score of the actual model
         :param best_fitness: float, the best score so far
         :return: bool
         """
-        # TODO
+        return actual_fitness < best_fitness  # important: the general problem is considered
+                                                # to be a minimization problem, thus a lower fitness is better

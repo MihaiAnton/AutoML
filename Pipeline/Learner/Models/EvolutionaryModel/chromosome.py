@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from .. import AbstractModel
+from ..abstractModel import AbstractModel
 
 
 class Chromosome:

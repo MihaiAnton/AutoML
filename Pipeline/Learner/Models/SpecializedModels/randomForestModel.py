@@ -9,7 +9,7 @@ import pickle
 
 from ....Exceptions import RandomForestModelException
 from ..abstractModel import AbstractModel
-from .. import RANDOM_FOREST_MODEL
+from ..modelTypes import RANDOM_FOREST_MODEL
 from ..constants import CLASSIFICATION, REGRESSION, AVAILABLE_TASKS
 
 

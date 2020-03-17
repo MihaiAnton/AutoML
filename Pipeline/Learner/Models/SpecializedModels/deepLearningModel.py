@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from .. import DEEP_LEARNING_MODEL as MODEL_TYPE
+from ..modelTypes import DEEP_LEARNING_MODEL
 from ..constants import AVAILABLE_TASKS, CLASSIFICATION
 
 
@@ -66,23 +66,23 @@ class DeepLearningModel(AbstractModel):
     TEMPORARY_FILE = ".tmp_model_file"
 
     def __init__(self, in_size, out_size, task: str = "", config: dict = None, predicted_name: list = None,
-                 dictionary=None):
+                 dictionary: dict = None):
         """
             Initializes a deep learning model.
             :param in_size: the input size of the neural network
             :param out_size: the predicted size of the network
-            :param config: the configuration map
+            :param config: the configuration map (expected to get the NEURAL_NETWORK_CONFIG part of the default model)
             :param task: the type of learning that is wanted to be done
         """
+        if type(dictionary) is dict:  # for internal use;
+            self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
+            return
+
         # data used for printing
         self._configured = False  # defines if the model has been configured or is still blank
         self._layers = []
         self._activations = []
         self._dropouts = []
-
-        if type(dictionary) is dict:  # for internal use;
-            self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
-            return
 
         if config is None:
             config = {}

@@ -6,7 +6,7 @@ from random import randint, randrange
 import warnings
 
 from ..abstractModel import AbstractModel
-from .. import SVM_MODEL
+from ..modelTypes import SVM_MODEL
 from ..constants import REGRESSION, CLASSIFICATION, AVAILABLE_TASKS
 from ....Exceptions import SvmModelException
 

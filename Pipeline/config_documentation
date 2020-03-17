@@ -85,9 +85,6 @@
     "PREDICTED_COLUMN_NAME": "Price",           ---> <output_column_name> - the name of the predicted column
 
     "DEFAULT_MODEL": "neural_network",          ---> "neural_network"/"random_forest"/"svm" - the default training method (TYPE should be "default")
-    "EVOLUTIONARY_MODEL_CONFIG": {              ---> if TYPE is "evolutionary", provide this object
-      "MODELS": ["neural_network"]              ---> list of allowed models - the models to search for
-    }
 
     "NEURAL_NETWORK_CONFIG": {                  ---> if DEFAULT_MODEL is "neural_network", provide this object
       "CRITERION": "MSE"                        ---> "MSE" / "BCE" / "CrossEntropy" / "LogLikelihood" / "PoissonLogLikelihood" - the loss function used
@@ -127,8 +124,15 @@
       "DECISION_FUNCTION_SHAPE": "ovo"          ---> "ovo" / "ovr" - classification algorithm
     }
 
-  }
+    "EVOLUTIONARY_MODEL_CONFIG": {              ---> if TYPE is "evolutionary", provide this object
+      "MODELS": ["neural_network"]              ---> list of allowed models - the models to search for
 
+      "NEURAL_NETWORK_CONFIG": {
+
+      }
+
+    }
+  }
 }
 
 

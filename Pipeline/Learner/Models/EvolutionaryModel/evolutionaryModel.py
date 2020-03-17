@@ -1,10 +1,12 @@
-import pickle
+
 from pandas import DataFrame
 
-from .. import AbstractModel
+from ..abstractModel import AbstractModel
+from ..constants import AVAILABLE_TASKS
+# TODO check more on this import problem from ...Models import load_model
 from ....Exceptions import EvolutionaryModelException
-from .. import load_model
-from .. import EVOLUTIONARY_MODEL
+
+from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
 
 
@@ -16,26 +18,36 @@ class EvolutionaryModel(AbstractModel):
         The API is similar to the AbstractModel's API
     """
 
-    def __init__(self, in_size: int, out_size: int, config: dict = None):
+    def __init__(self, in_size: int, out_size: int, task: str = "", config: dict = None, predicted_name: list = None,
+                 dictionary: dict = None):
         """
             Initializes a evolutionary model
         :param in_size: the size of the input data
         :param out_size: the size that needs to be predicted
         :param config: the configuration dictionary
         """
+        if type(dictionary) is dict:  # for internal use;
+            self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
+            return
+
         if config is None:
             config = {}
 
+        # model parameters
+        self._predicted_name = predicted_name
+        self._task = task
         self._config = config
         self._input_size = in_size
         self._output_size = out_size
 
+        # evolutionary attributes
         self._population = self._create_population(in_size, out_size,
                                                    config)  # the population for the evolutionary algorithm
         self._model = None  # the final model, after the evolutionary phase
+        self._model_score = None
 
     @staticmethod
-    def _create_population(in_size: int, out_size: int, config: dict = {}) -> Population:
+    def _create_population(in_size: int, out_size: int, config: dict = None) -> Population:
         """
             Creates a population as configured in the config file
         :param in_size: the size of the input data
@@ -43,6 +55,9 @@ class EvolutionaryModel(AbstractModel):
         :param config: the configuration dictionary
         :return: a population of models
         """
+        if config is None:
+            config = {}
+
         population_size = config.get("POPULATION_SIZE", 10)
         population = Population(in_size, out_size, population_size, config)
         return population
@@ -56,6 +71,13 @@ class EvolutionaryModel(AbstractModel):
             :param Y: the dependents(predicted) values in form of Pandas DataFrame
             :return: the model
         """
+        # define the task
+        if self._task not in AVAILABLE_TASKS:
+            self._task = self._determine_task_type(Y)
+
+        # define the predicted names
+        if self._predicted_name is None:
+            self._predicted_name = list(Y.columns)
 
         # searches for the best model
         # using epochs now, convert to time later
@@ -73,13 +95,15 @@ class EvolutionaryModel(AbstractModel):
             offspring = self._population.mutation(offspring)  # perform a mutation
 
             score = offspring.eval(X, Y)  # evaluate the offspring
-            # TODO if self._model is None or the score is better( higher or lower -> decide) replace the old model
+            if self._model_score is None or self._model_score > score:
+                self._model_score = score
+                self._model = offspring.get_model()
 
             self._population.replace(offspring)  # add it in the population
 
         # trains the best model
-        train_time = 0 #decide the train time
-        self._model.train(X,Y, train_time)
+        train_time = 0  # decide the train time
+        self._model.train(X, Y, train_time)
 
         # returns it
         return self._model
@@ -138,7 +162,7 @@ class EvolutionaryModel(AbstractModel):
         # TODO
 
         # init the model
-        self._model = load_model(model)
+        # TODO self._model = load_model(model)
 
     def model_type(self) -> str:
         return EVOLUTIONARY_MODEL
