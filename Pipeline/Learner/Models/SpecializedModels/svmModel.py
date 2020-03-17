@@ -37,6 +37,11 @@ class SvmModel(AbstractModel):
         # actual model
         self._model = None
 
+        # print data
+        self._configured = False
+        self._kernel = None
+        self._regularization = None
+
     # noinspection DuplicatedCode
     def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None,
               validation_split: float = 0.2) -> 'AbstractModel':
@@ -79,6 +84,10 @@ class SvmModel(AbstractModel):
         # train the model
         if self._model is None:
             self._model = self._get_model()
+            self._configured = True
+            self._kernel = self._model.kernel
+            self._regularization = self._model.C
+
         self._model.fit(x_train, y_train.ravel())
 
         if self._task == CLASSIFICATION:
@@ -133,7 +142,10 @@ class SvmModel(AbstractModel):
             "METADATA": {
                 "PREDICTED_NAME": self._predicted_name,
                 "CONFIG": self._config,
-                "TASK": self._task
+                "TASK": self._task,
+                "CONFIGURED": self._configured,
+                "KERNEL": self._kernel,
+                "REGULARIZATION": self._regularization
             }
         }
 
@@ -158,6 +170,9 @@ class SvmModel(AbstractModel):
         self._predicted_name = mdata.get("PREDICTED_NAME")
         self._config = mdata.get("CONFIG")
         self._task = mdata.get("TASK")
+        self._configured = mdata.get("CONFIGURED")
+        self._kernel = mdata.get("KERNEL")
+        self._regularization = mdata.get("REGULARIZATION")
 
         # init the model
         self._model = pickle.loads(model)
@@ -203,3 +218,14 @@ class SvmModel(AbstractModel):
             tol=1e-6,
             cache_size=300
         )
+
+    def _description_string(self) -> str:
+        if self._configured is False:
+            return "SVM - Not Configured"
+        else:
+            task = "Classifier" if self._task == CLASSIFICATION else "Regression"
+            return "SVM {task} - Kernel: {kernel} | Regularization: {reg}".format(
+                task=task,
+                kernel=self._kernel,
+                reg=self._regularization
+            )

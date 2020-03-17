@@ -171,3 +171,13 @@ class AbstractModel(ABC):
         categories = data.idxmax(axis=1)  # get the categories
         return DataFrame([mapping[c] for c in categories])  # easily construct the dataframe from list of
         # dictionaries
+
+    @abstractmethod
+    def _description_string(self) -> str:
+        """
+            Returns the description string for printing on user output.
+        :return: string
+        """
+
+    def __repr__(self):
+        return self._description_string()

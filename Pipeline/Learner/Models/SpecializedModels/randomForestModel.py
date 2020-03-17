@@ -41,6 +41,11 @@ class RandomForestModel(AbstractModel):
         self._model = None
         self._model_score = None
 
+        # print data
+        self._configured = None
+        self._n_estimators = None
+        self._criterion = None
+
     # noinspection DuplicatedCode
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
               validation_split: float = 0.2) -> 'AbstractModel':
@@ -72,8 +77,8 @@ class RandomForestModel(AbstractModel):
                 raise RandomForestModelException("Parameter validation_split should be None or float in range [0,1)")
             if validation_split < 0 or validation_split >= 1:
                 validation_split = 0.2
-                warnings.warn("RandomForestModel: configured validation percentage is out of bounds; using default value 0.2",
-                              RuntimeWarning)
+                warnings.warn("RandomForestModel: configured validation percentage is out of bounds; using default "
+                              "value 0.2", RuntimeWarning)
 
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))
@@ -112,6 +117,11 @@ class RandomForestModel(AbstractModel):
                     self._task == REGRESSION and (self._model_score is None or self._model_score > criterion):
                 self._model_score = criterion
                 self._model = model
+
+                # data for printing
+                self._configured = True
+                self._n_estimators = self._model.n_estimators
+                self._criterion = self._model.criterion
 
             epoch_end = time.time()
             epoch_duration = epoch_end - epoch_start
@@ -262,7 +272,10 @@ class RandomForestModel(AbstractModel):
             "METADATA": {
                 "PREDICTED_NAME": self._predicted_name,
                 "CONFIG": self._config,
-                "TASK": self._task
+                "TASK": self._task,
+                "CONFIGURED": self._configured,
+                "N_ESTIM": self._n_estimators,
+                "CRITERION": self._criterion
             }
         }
 
@@ -287,6 +300,20 @@ class RandomForestModel(AbstractModel):
         self._predicted_name = mdata.get("PREDICTED_NAME")
         self._config = mdata.get("CONFIG")
         self._task = mdata.get("TASK")
+        self._configured = mdata.get("CONFIGURED")
+        self._n_estimators = mdata.get("N_ESTIM")
+        self._criterion = mdata.get("CRITERION")
 
         # init the model
         self._model = pickle.loads(model)
+
+    def _description_string(self) -> str:
+        if self._configured is False:
+            return "Random Forest - Not configured"
+        else:
+            task = "Classifier" if self._task == CLASSIFICATION else "Regression"
+            return "Random Forest {task} - Estimators: {estimators} | Criterion: {criterion}".format(
+                task=task,
+                estimators=self._n_estimators,
+                criterion=self._criterion
+            )

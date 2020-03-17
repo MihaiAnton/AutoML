@@ -74,6 +74,12 @@ class DeepLearningModel(AbstractModel):
             :param config: the configuration map
             :param task: the type of learning that is wanted to be done
         """
+        # data used for printing
+        self._configured = False  # defines if the model has been configured or is still blank
+        self._layers = []
+        self._activations = []
+        self._dropouts = []
+
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
@@ -304,7 +310,7 @@ class DeepLearningModel(AbstractModel):
             Creates a neural network as specified in the configuration
         :return:
         """
-
+        self._configured = True
         # define network detail
         # get the configured items
         hidden_layers_requested = self._config.get("HIDDEN_LAYERS", "smooth")
@@ -313,9 +319,9 @@ class DeepLearningModel(AbstractModel):
         input_layer_size = self._input_count
         output_layer_size = self._output_count
 
-        ##### parse the arguments so they can be used in the network
+        # parse the arguments so they can be used in the network
 
-        ### layers
+        # layers
         hidden_layers = []
         if hidden_layers_requested == "smooth":
             # create a list of hidden layer sizes, always layer i's size being the (i-1) layer's size divide by 2,
@@ -338,8 +344,9 @@ class DeepLearningModel(AbstractModel):
                     layer_size = -layer_size
                 hidden_layers.append(layer_size)
             pass
+        self._layers = [self._input_count] + hidden_layers + [self._output_count]
 
-        ### activations
+        # activations
         if type(activation_requested) not in [str, list]:
             warnings.warn(
                 "DeepLearningModel: provided activation {} not understood; using {} as default activation."
@@ -368,8 +375,9 @@ class DeepLearningModel(AbstractModel):
                             "Not able to use activation function {}".format(activation_requested))
                 activations = activation_requested + [activation_requested[-1]] * (
                         len(hidden_layers) + 1 - len(activation_requested))
+        self._activations = activations
 
-        ### dropout
+        # dropout
         if type(dropout_requested) not in [float, list]:
             warnings.warn(
                 "DeepLearningModel: provided dropout type not understood; using {} as default dropout."
@@ -380,6 +388,7 @@ class DeepLearningModel(AbstractModel):
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
             dropouts = dropout_requested[:(len(hidden_layers))]
+        self._dropouts = dropouts
 
         # create the network class
         class Network(nn.Module):
@@ -475,7 +484,11 @@ class DeepLearningModel(AbstractModel):
                 "INPUT_COUNT": self._input_count,
                 "OUTPUT_COUNT": self._output_count,
                 "TASK": self._task,
-                "CLASSIFICATION_MAPPING": self._classification_mapping
+                "CLASSIFICATION_MAPPING": self._classification_mapping,
+                "CONFIGURED": self._configured,
+                "LAYERS": self._layers,
+                "ACTIVATIONS": self._activations,
+                "DROPOUTS": self._dropouts
             }
         }
 
@@ -505,6 +518,10 @@ class DeepLearningModel(AbstractModel):
         self._output_count = data.get("OUTPUT_COUNT")
         self._task = data.get("TASK")
         self._classification_mapping = data.get("CLASSIFICATION_MAPPING")
+        self._configured = data.get("CONFIGURED")
+        self._layers = data.get("LAYERS")
+        self._activations = data.get("ACTIVATIONS")
+        self._dropouts = data.get("DROPOUTS")
 
         # init the model
         self._model = self.create_model()
@@ -515,3 +532,13 @@ class DeepLearningModel(AbstractModel):
 
         self._train_mode = False
         self._model.eval()
+
+    def _description_string(self) -> str:
+        if self._configured is False:
+            return "NeuralNetwork - Not configured"
+        else:
+            return "NeuralNetwork - Layers: {layers} | Activations: {activations} | Dropouts: {dropouts}".format(
+                layers=self._layers,
+                activations=self._activations,
+                dropouts=self._dropouts
+            )

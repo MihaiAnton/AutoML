@@ -59,7 +59,7 @@
   "TRAINING_CONFIG": {
     "TYPE": "default",
     "TASK": "classification",
-    "TIME": "3s",
+    "TIME": "20s",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "svm",
@@ -70,10 +70,10 @@
     "NEURAL_NETWORK_CONFIG": {
       "CRITERION": "MSE",
       "OPTIMIZER" : "Adam",
-      "LEARNING_RATE": 0.1,
+      "LEARNING_RATE": 0.001,
       "MOMENTUM": 0.9,
       "HIDDEN_LAYERS": "smooth",
-      "ACTIVATIONS": "relu",
+      "ACTIVATIONS": "sigmoid",
       "DROPOUT": 0.2
     },
 
@@ -95,10 +95,10 @@
 
     "SVM_CONFIG": {
       "REGULARIZATION_C": 0.4,
-      "KERNEL": "poly",
+      "KERNEL": "rbf",
       "POLY_DEGREE": 1,
       "GAMMA": "scale",
-      "DECISION_FUNCTION_SHAPE": "ovo"
+      "DECISION_FUNCTION_SHAPE": "ovr"
     }
 
   }
