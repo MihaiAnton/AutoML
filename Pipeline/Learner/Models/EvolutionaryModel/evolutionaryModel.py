@@ -16,25 +16,35 @@ class EvolutionaryModel(AbstractModel):
         The API is similar to the AbstractModel's API
     """
 
-    def __init__(self, config: dict = None):
+    def __init__(self, in_size: int, out_size: int, config: dict = None):
         """
             Initializes a evolutionary model
+        :param in_size: the size of the input data
+        :param out_size: the size that needs to be predicted
+        :param config: the configuration dictionary
         """
         if config is None:
             config = {}
 
         self._config = config
+        self._input_size = in_size
+        self._output_size = out_size
 
-        self._population = self._create_population()  # the population for the evolutionary algorithm
+        self._population = self._create_population(in_size, out_size,
+                                                   config)  # the population for the evolutionary algorithm
         self._model = None  # the final model, after the evolutionary phase
 
-    def _create_population(self) -> Population:
+    @staticmethod
+    def _create_population(in_size: int, out_size: int, config: dict = {}) -> Population:
         """
             Creates a population as configured in the config file
+        :param in_size: the size of the input data
+        :param out_size: the size that needs to be predicted
+        :param config: the configuration dictionary
         :return: a population of models
         """
-        population_size = self._config.get("POPULATION_SIZE", 10)
-        population = Population(population_size, self._config)
+        population_size = config.get("POPULATION_SIZE", 10)
+        population = Population(in_size, out_size, population_size, config)
         return population
 
     def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None) -> 'AbstractModel':
@@ -48,10 +58,31 @@ class EvolutionaryModel(AbstractModel):
         """
 
         # searches for the best model
+        # using epochs now, convert to time later
+        EPOCHS = 10
+
+        # initial evaluation
+        self._population.eval(X, Y)
+
+        for epoch in range(EPOCHS):
+            print("======================= EPOCH {}".format(epoch))
+            mother = self._population.selection()  # get the parents
+            father = self._population.selection()
+
+            offspring = self._population.XO(mother, father)  # combine them
+            offspring = self._population.mutation(offspring)  # perform a mutation
+
+            score = offspring.eval(X, Y)  # evaluate the offspring
+            # TODO if self._model is None or the score is better( higher or lower -> decide) replace the old model
+
+            self._population.replace(offspring)  # add it in the population
 
         # trains the best model
+        train_time = 0 #decide the train time
+        self._model.train(X,Y, train_time)
 
         # returns it
+        return self._model
 
     def predict(self, X: DataFrame) -> DataFrame:
         """
