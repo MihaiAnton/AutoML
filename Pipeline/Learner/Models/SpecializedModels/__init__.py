@@ -1,6 +1,7 @@
 """SpecializedModel
 
     The package contains all the AbstractModel implementations available in the framework.
+    All the models here represent actual machine learning models, ready to be configured and trained.
 """
 
 # Package level imports
