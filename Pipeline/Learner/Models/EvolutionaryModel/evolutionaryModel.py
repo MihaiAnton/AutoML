@@ -1,13 +1,14 @@
-
 from pandas import DataFrame
 
 from ..abstractModel import AbstractModel
 from ..constants import AVAILABLE_TASKS
 # TODO check more on this import problem from ...Models import load_model
+
 from ....Exceptions import EvolutionaryModelException
 
 from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
+from ..constants import AVAILABLE_TASKS
 
 
 class EvolutionaryModel(AbstractModel):
@@ -41,17 +42,22 @@ class EvolutionaryModel(AbstractModel):
         self._output_size = out_size
 
         # evolutionary attributes
-        self._population = self._create_population(in_size, out_size,
-                                                   config)  # the population for the evolutionary algorithm
+        if task in AVAILABLE_TASKS:
+            self._population = self._create_population(in_size, out_size, task,
+                                                       config)  # the population for the evolutionary algorithm
+        else:
+            self._population = None     # to be created when analysing the data
+
         self._model = None  # the final model, after the evolutionary phase
         self._model_score = None
 
     @staticmethod
-    def _create_population(in_size: int, out_size: int, config: dict = None) -> Population:
+    def _create_population(in_size: int, out_size: int, task: str, config: dict = None) -> Population:
         """
             Creates a population as configured in the config file
         :param in_size: the size of the input data
         :param out_size: the size that needs to be predicted
+        :param task: the task of the model (CLASSIFICATION / REGRESSION)
         :param config: the configuration dictionary
         :return: a population of models
         """
@@ -59,7 +65,7 @@ class EvolutionaryModel(AbstractModel):
             config = {}
 
         population_size = config.get("POPULATION_SIZE", 10)
-        population = Population(in_size, out_size, population_size, config)
+        population = Population(in_size, out_size, task, population_size, config)
         return population
 
     def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None) -> 'AbstractModel':
@@ -72,15 +78,17 @@ class EvolutionaryModel(AbstractModel):
             :return: the model
         """
         # define the task
-        if self._task not in AVAILABLE_TASKS:
+        if self._task not in AVAILABLE_TASKS or self._population is None:
+            # if the task is not defined, neither is the population
             self._task = self._determine_task_type(Y)
+            self._population = self._create_population(self._input_size, self._output_size, self._task, self._config)
 
         # define the predicted names
         if self._predicted_name is None:
             self._predicted_name = list(Y.columns)
 
         # searches for the best model
-        # using epochs now, convert to time later
+        # TODO using epochs now, convert to time later
         EPOCHS = 10
 
         # initial evaluation
@@ -163,6 +171,8 @@ class EvolutionaryModel(AbstractModel):
 
         # init the model
         # TODO self._model = load_model(model)
+        from ...Models import load_model  # put here to avoid circular imports
+        self._model = load_model(model)
 
     def model_type(self) -> str:
         return EVOLUTIONARY_MODEL

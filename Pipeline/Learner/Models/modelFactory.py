@@ -81,5 +81,5 @@ class ModelFactory:
         :return: the initial model (untrained)
         """
 
-        return EvolutionaryModel(task=self._task, config=self._config.get("EVOLUTIONARY_MODEL_CONFIG", {}))
+        return EvolutionaryModel(in_size, out_size, task=self._task, config=self._config.get("EVOLUTIONARY_MODEL_CONFIG", {}))
 

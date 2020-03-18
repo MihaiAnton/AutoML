@@ -11,7 +11,7 @@ in the config file.
 from random import choice, uniform, randint
 
 from ..SpecializedModels import DeepLearningModel
-from .. import AbstractModel
+from ..abstractModel import AbstractModel
 from ..constants import CLASSIFICATION
 
 
@@ -52,14 +52,14 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
 
     # create a configuration dictionary for the model
     optimizer = choice(config.get("OPTIMIZER_CHOICE", ["Adam", "SGD"]))
-    learning_rate = uniform(config.get("LEARNING_RATE_RANGE", [0.000001, 1]))
-    momentum = uniform(config.get("MOMENTUM_RANGE", [0, 1]))
+    learning_rate = uniform(*config.get("LEARNING_RATE_RANGE", [0.000001, 1]))
+    momentum = uniform(*config.get("MOMENTUM_RANGE", [0, 1]))
     layer_choice = choice(config.get("HIDDEN_LAYERS_CHOICES", ["smooth", [10, 512, 6]]))
     if type(layer_choice) is str:
         layers = "smooth"
     else:
-        layer_count = randint(1, layer_choice[2])
-        layers = [randint(layer_choice[0], layer_choice[1]) for i in layer_count]
+        layer_count = randint(1, max(layer_choice[2], 1))
+        layers = [randint(layer_choice[0], layer_choice[1]) for i in range(layer_count)]
 
     activation_choice = choice(["uniform", "list"])
     if activation_choice == "uniform" or layers == "smooth":
@@ -74,7 +74,7 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
         else:
             activation[-1] = "sigmoid"
 
-    dropout = uniform(config.get("DROPOUT_RANGE", [0, 1]))
+    dropout = uniform(*config.get("DROPOUT_RANGE", [0, 1]))
 
     model_config = {
         "CRITERION": criterion,

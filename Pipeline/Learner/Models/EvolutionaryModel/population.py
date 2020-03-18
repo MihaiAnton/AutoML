@@ -2,25 +2,32 @@ from pandas import DataFrame
 
 from ..abstractModel import AbstractModel
 from .chromosome import Chromosome
+from .model_creation import create_random_model
 
 
 class Population:
+    """
+        The main scope of the class is to aggregate chromosomes(models) into one place,
+    to train them and eventually find the best one.
 
-    def __init__(self, input_size: int, output_size: int, population_size=10, config: dict = None):
+        Methods:
+            - eval(): evaluates the whole population based on a X,Y dataset
+            - get_best(): finds the best chromosome and returns it
+            - replace(): replaces the worst performing model(chromosome) with a new chromosome
+            - selection(): returns a chromosome from the population (the better it's model performance,
+                            the higher the chances of returning that chromosome)
+            - XO(): crossover between two chromosomes: return another one
+            - mutation(): performs a random mutation on a chromosome
+    """
+
+    def __init__(self, input_size: int, output_size: int, task: str, population_size: int = 10, config: dict = None):
         """
             Creates a population of chromosomes (models)
-
-            The main scope of the class is to aggregate chromosomes(models) into one place,
-        to train them and eventually find the best one.
-
-            Methods:
-                - eval(): evaluates the whole population based on a X,Y dataset
-                - get_best(): finds the best chromosome and returns it
-                - replace(): replaces the worst performing model(chromosome) with a new chromosome
-                - selection(): returns a chromosome from the population (the better it's model performance,
-                                the higher the chances of returning that chromosome)
-                - XO(): crossover between two chromosomes: return another one
-                - mutation(): performs a random mutation on a chromosome
+        :param input_size: the size of the input data
+        :param output_size: the desired size of the prediction
+        :param task: the task of the population's models (CLASSIFICATION / REGRESSION)
+        :param population_size: the population size generated
+        :param config: the configuration for evolutionary choices and ranges
         """
         if config is None:
             config = {}
@@ -30,7 +37,7 @@ class Population:
         self._output_size = output_size
 
         self._population_size = population_size
-        self._population = self._create_population(population_size, input_size, output_size)
+        self._population = self._create_population(input_size, output_size, task, population_size, config)
         self._best_model = None
         self._fitness = None
 
@@ -119,33 +126,35 @@ class Population:
         """
         # TODO
 
-    def _create_population(self, population_size, input_size, output_size, config: dict = None) -> list:
+    def _create_population(self, input_size: int, output_size: int, task: str, population_size: int,
+                           config: dict) -> list:
         """
             Creates a random population of the given size and configuration.
-        :param population_size: the number of chromosomes in the population
         :param input_size: the input size for the data to be trained
         :param output_size: the output size of the data to be predicted
+        :param task: the task that needs to be performed (CLASSIFICATION / REGRESSION)
+        :param population_size: the number of chromosomes in the population
         :param config: the configuration that states the rules for population creation.
         :return: list of chromosomes
         """
         population = []
         for i in range(population_size):
-            model = self._random_model(config, input_size, output_size)
+            model = self._random_model(input_size, output_size, task, config)
             chromosome = Chromosome(model)
             population.append(chromosome)
         return population
 
-    def _random_model(self, input_size, output_size, config: dict = None) -> AbstractModel:
+    def _random_model(self, input_size, output_size, task, config: dict) -> AbstractModel:
         """
             Generates a random chromosome
         :param input_size: the input size for the data to be trained
         :param output_size: the output size of the data to be predicted
+        :param task: the task that needs to be performed (CLASSIFICATION / REGRESSION)
         :param config: the configuration for the evolutionary models
                 (expected EVOLUTIONARY_MODEL_CONFIG part of the config file)
         :return: the created model (untrained)
         """
-
-
+        return create_random_model(input_size, output_size, config, task)
 
     @staticmethod
     def _is_fitter(actual_fitness: float, best_fitness: float) -> bool:
@@ -156,4 +165,4 @@ class Population:
         :return: bool
         """
         return actual_fitness < best_fitness  # important: the general problem is considered
-                                                # to be a minimization problem, thus a lower fitness is better
+        # to be a minimization problem, thus a lower fitness is better
