@@ -1,8 +1,11 @@
 import pickle
 from abc import ABC, abstractmethod
 from pandas import DataFrame
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, \
+    mean_absolute_error, mean_squared_error, mean_squared_log_error
 
 from .constants import CLASSIFICATION, REGRESSION
+from ...Exceptions import AbstractModelException
 
 
 class AbstractModel(ABC):
@@ -20,11 +23,24 @@ class AbstractModel(ABC):
         Behaviour:
             - calling an object ( model_instance(data) ), will return the prediction
     """
+    ACCEPTED_CLASSIFICATION_METRICS = ["accuracy", "balanced_accuracy"]
+    ACCEPTED_REGRESSION_METRICS = ["mean_absolute_error", "mean_squared_error", "mean_squared_log_error"]
+
+    METRICS_TO_FUNCTION_MAP = {
+        "accuracy": accuracy_score,
+        "balanced_accuracy": balanced_accuracy_score,
+
+        "mean_absolute_error": mean_absolute_error,
+        "mean_squared_error": mean_squared_error,
+        "mean_squared_log_error": mean_squared_log_error
+    }
 
     @abstractmethod
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None) -> 'AbstractModel':
+    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, validation_split: float = 0.2,
+              callbacks: list = None) -> 'AbstractModel':
         """
             Trains the model with the data provided.
+        :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param callbacks: a list of predefined callbacks that get called at every epoch
         :param time: time of the training session in seconds: default 10 minutes
         :param X: the independent variables in form of Pandas DataFrame
@@ -47,6 +63,41 @@ class AbstractModel(ABC):
         :return: predicted data
         """
         return self.predict(X)
+
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str):
+        """
+            Evaluates the model's performance and returns a score
+        :param task: the task of the model (REGRESSION / CLASSIFICATION)
+        :param X: the input dataset
+        :param Y: the dataset to compare the prediction to
+        :param metric: the metric used (MSE, ACC,
+        :return: the score
+        """
+        if task == REGRESSION:
+            if metric in self.ACCEPTED_REGRESSION_METRICS:
+                scorer = self.METRICS_TO_FUNCTION_MAP[metric]
+
+                pred = self.predict(X)
+
+                y_true = Y.to_numpy()
+                y_pred = pred.to_numpy()
+                return scorer(y_true, y_pred)
+            else:
+                raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
+        elif task == CLASSIFICATION:
+            if metric in self.ACCEPTED_CLASSIFICATION_METRICS:
+                scorer = self.METRICS_TO_FUNCTION_MAP[metric]
+
+                pred = self.predict(X)
+
+                y_true = Y.to_numpy()
+                y_pred = pred.to_numpy()
+                return 1 - scorer(y_true, y_pred)
+                # there a higher score is better, but the goal is minimization, this is why it is used 1/score
+            else:
+                raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
+        else:
+            raise AbstractModelException("Task type {} not understood.".format(task))
 
     @abstractmethod
     def to_dict(self) -> dict:
