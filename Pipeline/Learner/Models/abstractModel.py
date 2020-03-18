@@ -81,7 +81,8 @@ class AbstractModel(ABC):
 
                 y_true = Y.to_numpy()
                 y_pred = pred.to_numpy()
-                return scorer(y_true, y_pred)
+                score = scorer(y_true, y_pred)
+                return score
             else:
                 raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
         elif task == CLASSIFICATION:
@@ -92,7 +93,13 @@ class AbstractModel(ABC):
 
                 y_true = Y.to_numpy()
                 y_pred = pred.to_numpy()
-                return 1 - scorer(y_true, y_pred)
+                score = scorer(y_true, y_pred)
+
+                # TODO remove this; debugging purposes only
+                if score is None:
+                    print(1)
+
+                return 1 - score
                 # there a higher score is better, but the goal is minimization, this is why it is used 1/score
             else:
                 raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))

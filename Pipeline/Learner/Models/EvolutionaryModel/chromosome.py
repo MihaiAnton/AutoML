@@ -22,18 +22,22 @@ class Chromosome:
         self._genotype = model
         self._phenotype = None
 
-    def eval(self, X: DataFrame, Y: DataFrame) -> float:
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, criterion: str, time: int, validation_split: float) -> float:
         """
             Evaluates the model and returns a score (the fitness of the chromosome).
+        :param validation_split: percentage of the data to be used in validation; None if validation should not be used
+        :param time: time of the training session in seconds: default 10 minutes
+        :param criterion: the criterion from the configuration file
+        :param task: the task (CLASSIFICATION/REGRESSION)
         :param X: the data to predict an output from
         :param Y: the data to compare the output to
         :return: chromosome's fitness
         """
-        # evaluate the model
-        # TODO
-        # save the evaluation as phenotype
-
-        # return the value
+        model = self.get_model()
+        model.train(X, Y, train_time=time, validation_split=validation_split)
+        score = self._genotype.eval(X, Y, task, criterion)
+        self._phenotype = score
+        return score
 
     def get_fitness(self) -> float:
         """
@@ -48,3 +52,6 @@ class Chromosome:
         :return: the model within the chromosome
         """
         return self._genotype
+
+    def __repr__(self):
+        return str(self._genotype)

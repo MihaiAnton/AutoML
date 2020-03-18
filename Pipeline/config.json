@@ -59,7 +59,7 @@
   "TRAINING_CONFIG": {
     "TYPE": "evolutionary",
     "TASK": "classification",
-    "TIME": "20s",
+    "TIME": "8s",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "svm",
@@ -98,16 +98,20 @@
       "DECISION_FUNCTION_SHAPE": "ovr"
     },
 
+
+
+
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
-      "GENERAL_CRITERION": "MSE",
+      "GENERAL_CRITERION": "accuracy",
       "TASK": "classification",
+      "POPULATION_SIZE": 20,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {
         "OPTIMIZER_CHOICE" : ["Adam","SGD"],
         "LEARNING_RATE_RANGE": [0.000001, 1],
         "MOMENTUM_RANGE": [0,1],
-        "HIDDEN_LAYERS_CHOICES": ["smooth",[10,512,6]],
+        "HIDDEN_LAYERS_CHOICES": ["smooth",[10,32,6]],
         "ACTIVATION_CHOICES": ["sigmoid","relu","linear"],
         "DROPOUT_RANGE": [0,1]
       }

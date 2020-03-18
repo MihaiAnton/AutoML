@@ -46,7 +46,7 @@ class EvolutionaryModel(AbstractModel):
             self._population = self._create_population(in_size, out_size, task,
                                                        config)  # the population for the evolutionary algorithm
         else:
-            self._population = None     # to be created when analysing the data
+            self._population = None  # to be created when analysing the data
 
         self._model = None  # the final model, after the evolutionary phase
         self._model_score = None
@@ -68,9 +68,11 @@ class EvolutionaryModel(AbstractModel):
         population = Population(in_size, out_size, task, population_size, config)
         return population
 
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None) -> 'AbstractModel':
+    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None,
+              validation: float = 0.2) -> 'AbstractModel':
         """
                 Trains the model with the data provided.
+            :param validation: percentage of the data to be used in validation; None if validation should not be used
             :param callbacks: a list of predefined callbacks that get called at every epoch
             :param time: time of the training session in seconds: default 10 minutes
             :param X: the independent variables in form of Pandas DataFrame
@@ -89,28 +91,33 @@ class EvolutionaryModel(AbstractModel):
 
         # searches for the best model
         # TODO using epochs now, convert to time later
-        EPOCHS = 10
+        EPOCHS = 100
 
         # initial evaluation
-        self._population.eval(X, Y)
+        self._population.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), time * 0.6,
+                              validation_split=validation)
 
         for epoch in range(EPOCHS):
             print("======================= EPOCH {}".format(epoch))
-            mother = self._population.selection()  # get the parents
-            father = self._population.selection()
+            mother = self._population.selection()  # get the
+            father = self._population.selection()  # parents
 
             offspring = self._population.XO(mother, father)  # combine them
-            offspring = self._population.mutation(offspring)  # perform a mutation
+            offspringm = self._population.mutation(offspring)  # perform a mutation
 
-            score = offspring.eval(X, Y)  # evaluate the offspring
+            score = offspringm.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), time * 0.6,
+                                    validation_split=validation)  # evaluate the offspring
+
+            print("Evaluated mode: score {}".format(score))
             if self._model_score is None or self._model_score > score:
                 self._model_score = score
-                self._model = offspring.get_model()
+                self._model = offspringm.get_model()
 
-            self._population.replace(offspring)  # add it in the population
+            self._population.replace(offspringm)  # add it in the population
 
         # trains the best model
-        train_time = 0  # decide the train time
+        self._model = self._population.get_best().get_model()
+        train_time = 0  # TODO decide the train time
         self._model.train(X, Y, train_time)
 
         # returns it
@@ -143,7 +150,11 @@ class EvolutionaryModel(AbstractModel):
         data = {
             "MODEL": model,
             "METADATA": {
-                # TODO
+                "PRED_NAME": self._predicted_name,
+                "TASK": self._task,
+                "CONFIG": self._config,
+                "INPUT_SIZE": self._input_size,
+                "OUTPUT_SIZE": self._output_size
             }
         }
 
@@ -167,10 +178,15 @@ class EvolutionaryModel(AbstractModel):
         model = d.get("MODEL")
 
         # init the data
-        # TODO
+        self._predicted_name = data.get("PRED_NAME")
+        self._task = data.get("TASK")
+        self._config = data.get("CONFIG")
+        self._input_size = data.get("INPUT_SIZE")
+        self._output_size = data.get("OUTPUT_SIZE")
 
         # init the model
         # TODO self._model = load_model(model)
+        # FIXME
         from ...Models import load_model  # put here to avoid circular imports
         self._model = load_model(model)
 
@@ -186,3 +202,6 @@ class EvolutionaryModel(AbstractModel):
                 best="TODO",
                 top="TODO"
             )
+
+    def get_config(self) -> dict:
+        return self._config

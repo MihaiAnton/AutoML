@@ -87,3 +87,18 @@ class EvolutionaryModelException(Exception):
 
     def __repr__(self):
         return "EvolutionaryModelException: {}.".format(self._message)
+
+
+class AbstractModelException(Exception):
+    """
+        Generic exception for the abstract model
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+        self._message = message
+
+    def __repr__(self):
+        return "AbstractModelException: {}.".format(self._message)
+
+

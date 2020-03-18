@@ -120,6 +120,7 @@ class DeepLearningModel(AbstractModel):
 
         if self._task == CLASSIFICATION:
             mapping = self._classification_mapping["mapping"]
+            print(mapping)
             df = self._from_categorical(df, mapping)
         # check if the model is set for categorical purpose
 
