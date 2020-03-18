@@ -36,13 +36,13 @@ class AbstractModel(ABC):
     }
 
     @abstractmethod
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, validation_split: float = 0.2,
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
               callbacks: list = None) -> 'AbstractModel':
         """
             Trains the model with the data provided.
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param callbacks: a list of predefined callbacks that get called at every epoch
-        :param time: time of the training session in seconds: default 10 minutes
+        :param train_time: time of the training session in seconds: default 10 minutes
         :param X: the independent variables in form of Pandas DataFrame
         :param Y: the dependents(predicted) values in form of Pandas DataFrame
         :return: the model
@@ -70,7 +70,7 @@ class AbstractModel(ABC):
         :param task: the task of the model (REGRESSION / CLASSIFICATION)
         :param X: the input dataset
         :param Y: the dataset to compare the prediction to
-        :param metric: the metric used (MSE, ACC,
+        :param metric: the metric used
         :return: the score
         """
         if task == REGRESSION:
@@ -232,3 +232,10 @@ class AbstractModel(ABC):
 
     def __repr__(self):
         return self._description_string()
+
+    @abstractmethod
+    def get_config(self) -> dict:
+        """
+            Returns the configuration that was used to build the model
+        :return: dictionary with the configuration
+        """

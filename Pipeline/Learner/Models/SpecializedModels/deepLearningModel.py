@@ -125,9 +125,11 @@ class DeepLearningModel(AbstractModel):
 
         return df
 
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2):
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
+              callbacks: list = None):
         """
             Trains the model according to the specifications provided.
+        :param callbacks: a list of predefined callbacks that get called at every epoch
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param X: the dependent variables to train with
         :param Y: the predicted variables
@@ -463,7 +465,7 @@ class DeepLearningModel(AbstractModel):
             Returns the model type; in this case -> DEEP_LEARNING_MODEL
         :return:
         """
-        return MODEL_TYPE
+        return DEEP_LEARNING_MODEL
 
     def to_dict(self) -> dict:
         """
@@ -542,3 +544,7 @@ class DeepLearningModel(AbstractModel):
                 activations=self._activations,
                 dropouts=self._dropouts
             )
+
+    def get_config(self) -> dict:
+        return self._config
+

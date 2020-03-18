@@ -27,6 +27,7 @@ class RandomForestModel(AbstractModel):
         :param predicted_name: the name of the the predicted column
         :param dictionary:
         """
+
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
@@ -34,6 +35,8 @@ class RandomForestModel(AbstractModel):
         # model metadata
         self._task = task
         self._config = config
+        if config is None:
+            self._config = {}
         self._predicted_name = predicted_name
         self._criterion = ""
 
@@ -317,3 +320,6 @@ class RandomForestModel(AbstractModel):
                 estimators=self._n_estimators,
                 criterion=self._criterion
             )
+
+    def get_config(self) -> dict:
+        return self._config

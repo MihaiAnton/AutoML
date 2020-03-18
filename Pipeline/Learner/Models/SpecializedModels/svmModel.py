@@ -32,6 +32,8 @@ class SvmModel(AbstractModel):
         # model metadata
         self._task = task
         self._config = config
+        if config is None:
+            self._config = {}
         self._predicted_name = predicted_name
 
         # actual model
@@ -43,7 +45,7 @@ class SvmModel(AbstractModel):
         self._regularization = None
 
     # noinspection DuplicatedCode
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None,
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
               validation_split: float = 0.2) -> 'AbstractModel':
         """
                 Trains the model with the data provided.
@@ -229,3 +231,6 @@ class SvmModel(AbstractModel):
                 kernel=self._kernel,
                 reg=self._regularization
             )
+
+    def get_config(self) -> dict:
+        return self._config
