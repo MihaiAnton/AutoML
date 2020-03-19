@@ -176,8 +176,6 @@ class EvolutionaryModel(AbstractModel):
             Returns a dictionary representation of the model for further file saving.
         :return: dictionary with model encoding
         """
-        # !!! should match _init_from_dictionary loading format
-        # get the model data
         if self._model is None:
             raise EvolutionaryModelException("Cannot convert EvolutionaryModel to dict unless a train() is performed.")
 
