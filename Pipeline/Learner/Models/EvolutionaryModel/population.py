@@ -167,7 +167,8 @@ class Population:
 
         if model_type == DEEP_LEARNING_MODEL:
             return Chromosome(
-                deep_learning_mutation(chromosome.get_model(), self._input_size, self._output_size, self._task)
+                deep_learning_mutation(chromosome.get_model(), self._input_size, self._output_size, self._task,
+                                       self._config.get("NEURAL_NETWORK_EVOL_CONFIG", {}))
             )
 
         return chromosome

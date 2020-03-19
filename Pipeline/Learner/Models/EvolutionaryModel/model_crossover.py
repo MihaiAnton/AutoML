@@ -24,7 +24,7 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
 
     config1 = model1.get_config()
     config2 = model2.get_config()
-    XO_PROBAB = 0.6
+    XO_PROBAB = 0.6  # the probability that the parents are combined rather than choosing attributes from only one
 
     # optimizer
     optimizer = choice([config1.get("OPTIMIZER"), config2.get("OPTIMIZER")])
@@ -42,29 +42,52 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
         momentum = choice([config1.get("MOMENTUM"), config2.get("MOMENTUM")])
 
     # hidden_layers
-    layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
+    if type(config1.get("HIDDEN_LAYERS")) != type(config2.get("HIDDEN_LAYERS")):
+        layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
+    else:
+        if type(config1.get("HIDDEN_LAYERS")) is list:
+            min_len = min(len(config1.get("HIDDEN_LAYERS")), len(config2.get("HIDDEN_LAYERS")))
+            desired_len = int(.5 * (len(config1.get("HIDDEN_LAYERS")) + len(config2.get("HIDDEN_LAYERS"))))
 
-    # if random() > XO_PROBAB or type(config1.get("HIDDEN_LAYERS")) != type(config2.get("HIDDEN_LAYERS")):
-    #     layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
-    # else:
-    #     if type(config1.get("HIDDEN_LAYERS")) is str:
-    #         layers = config1.get("HIDDEN_LAYERS")
-    #     else:
-    #         layers = []
-    # TODO find another method for combining hidden layers
+            layers = [0]*desired_len
+
+            for i in range(desired_len):
+                if i < min_len:
+                    layers[i] = choice([config1.get("HIDDEN_LAYERS")[i], config2.get("HIDDEN_LAYERS")[i]])
+                else:
+                    if len(config1.get("HIDDEN_LAYERS")) == min_len:    # take from the longest one
+                        layers[i] = config2.get("HIDDEN_LAYERS")[i]
+                    else:
+                        layers[i] = config1.get("HIDDEN_LAYERS")[i]
+        else:
+            layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
 
     # activations
     if random() > XO_PROBAB or type(config1.get("ACTIVATIONS")) != type(config2.get("ACTIVATIONS")):
         activation = choice([config1.get("ACTIVATIONS"), config2.get("ACTIVATIONS")])
     else:
-        if type(config1.get("ACTIVATIONS")) is str:
-            activation = choice([config1.get("ACTIVATIONS"), config2.get("ACTIVATIONS")])
+        if type(config1.get("ACTIVATIONS")) is list:
+            # doing exactly like in the case of layers
+            min_len = min(len(config1.get("ACTIVATIONS")), len(config2.get("ACTIVATIONS")))
+            desired_len = int(.5 * (len(config1.get("ACTIVATIONS")) + len(config2.get("ACTIVATIONS"))))
+
+            activation = []
+
+            for i in range(desired_len):
+                if i < min_len:
+                    activation.append(choice([config1.get("ACTIVATIONS")[i], config2.get("ACTIVATIONS")[i]]))
+                else:
+                    if len(config1.get("ACTIVATIONS")) == min_len:  # take from the longest one
+                        activation.append(config2.get("ACTIVATIONS")[i])
+                    else:
+                        activation.append(config1.get("ACTIVATIONS")[i])
         else:
             activation = choice([config1.get("ACTIVATIONS"), config2.get("ACTIVATIONS")])
-            # TODO find a better method
 
     # dropout
-    if random() <= XO_PROBAB:
+    if random() <= XO_PROBAB and \
+            type(config1.get("DROPOUT")) in [int, float] and \
+            type(config2.get("DROPOUT")) in [int, float]:
         dropout = .5 * (config1.get("DROPOUT") + config2.get("DROPOUT"))
     else:
         dropout = choice([config1.get("DROPOUT"), config2.get("DROPOUT")])

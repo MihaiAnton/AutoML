@@ -117,10 +117,16 @@ class DeepLearningModel(AbstractModel):
         numpy_array = np.asarray(output.detach())
 
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
+        df.fillna(0, inplace=True)  # TODO find better alternative
 
         if self._task == CLASSIFICATION:
             mapping = self._classification_mapping["mapping"]
-            df = self._from_categorical(df, mapping)
+            try:
+                df_mapped = self._from_categorical(df, mapping)
+            except KeyError:
+                print(mapping)
+                print(9)
+            df = df_mapped
         # check if the model is set for categorical purpose
 
         return df
@@ -384,8 +390,8 @@ class DeepLearningModel(AbstractModel):
         # dropout
         if type(dropout_requested) not in [float, list]:
             warnings.warn(
-                "DeepLearningModel: provided dropout type not understood; using {} as default dropout."
-                    .format(self.DEFAULT_DROPOUT), RuntimeWarning)
+                "DeepLearningModel: provided dropout type {} not understood; using {} as default dropout."
+                    .format(type(dropout_requested),self.DEFAULT_DROPOUT), RuntimeWarning)
             dropout_requested = self.DEFAULT_DROPOUT
 
         if type(dropout_requested) is float:

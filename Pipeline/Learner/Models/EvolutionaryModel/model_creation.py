@@ -8,7 +8,7 @@ since the population needs random models at the beginning.
 in the config file.
 """
 
-from random import choice, uniform, randint, choices
+from random import choice, uniform, randint, choices, random
 
 from ..SpecializedModels import DeepLearningModel
 from ..abstractModel import AbstractModel
@@ -56,21 +56,22 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     optimizer = choice(config.get("OPTIMIZER_CHOICE", ["Adam", "SGD"]))
     learning_rate = uniform(*config.get("LEARNING_RATE_RANGE", [0.000001, 1]))
     momentum = uniform(*config.get("MOMENTUM_RANGE", [0, 1]))
-    layer_choice = choices(config.get("HIDDEN_LAYERS_CHOICES", ["smooth", [10, 512, 6]]), weights=[0.2, 0.8])[0]
-    if type(layer_choice) is str:
-        layers = "smooth"
-    elif type(layer_choice) is list:
+    # in the layer choices, the random choice is more biased towards creating a custom weight range.
+    # since using smooth all over the place could be too mainstream
+    layer_choice = choices(config.get("HIDDEN_LAYERS_CHOICES", ["smooth", [10, 128, 6]]), weights=[0.1, 0.9])[0]
+    if type(layer_choice) is list:
         layer_count = randint(1, max(layer_choice[2], 1))
-        layers = [randint(layer_choice[0], layer_choice[1]) for i in range(layer_count)]
+        layers = [randint(layer_choice[0], layer_choice[1]) for _ in range(layer_count)]
     else:
         layers = "smooth"
 
-    activation_choice = choice(["uniform", "list"])
+    # the same as with layers, we put more bias on a list of random activations rather than a smooth activation choice
+    activation_choice = choices(["uniform", "list"], weights=[0.3, 0.7])[0]
     if activation_choice == "uniform" or layers == "smooth":
         activation = choice(choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"])))
     else:
         activation = [choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"]))
-                      for i in range(len(layers) + 1)]
+                      for _ in range(len(layers) + 1)]
 
     if task == CLASSIFICATION:  # for classification "sigmoid" is used in the last layer by default
         if type(activation) is str:
@@ -78,7 +79,15 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
         else:
             activation[-1] = "sigmoid"
 
-    dropout = uniform(*config.get("DROPOUT_RANGE", [0, 1]))
+    # dropout
+    if random() < 0.5:
+        dropout = uniform(*config.get("DROPOUT_RANGE", [0, 0.6]))
+    else:
+        desired_len = 2
+        if type(layers) is list:
+            desired_len = len(layers)
+
+        dropout = [uniform(*config.get("DROPOUT_RANGE", [0, 0.6])) for _ in range(desired_len)]
 
     model_config = {
         "CRITERION": criterion,
