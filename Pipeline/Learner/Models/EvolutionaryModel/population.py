@@ -8,6 +8,7 @@ from ..modelTypes import *
 from .model_crossover import *
 from .model_mutation import *
 
+
 class Population:
     """
         The main scope of the class is to aggregate chromosomes(models) into one place,
@@ -47,6 +48,8 @@ class Population:
         self._best_model = None
         self._fitness = None
 
+        self._best_chromosome = None
+
     def eval(self, X: DataFrame, Y: DataFrame, task: str, criterion: str, time: int, validation_split: float
              ) -> Chromosome:
         """
@@ -69,13 +72,19 @@ class Population:
                 best = chromosome
                 best_fitness = chromosome_fitness
 
+        self._best_chromosome = best        # cache the best for further usage
         return best
 
     def get_best(self) -> Chromosome:
         """
-            Returns the best model in the population
+            Returns the best model in the population.
+            The method assumes that at every moment the population has done eval on every chromosome,
+        thus they all have a phenotype.
         :return:
         """
+        if not (self._best_chromosome is None):     # if the best chromosome is unchanged since the last calculation
+            return self._best_chromosome
+
         best = None
         best_fitness = None
 
@@ -94,6 +103,11 @@ class Population:
         :param chromosome: the new model to be added
         :return: the new population ( the same list as before, but changed)
         """
+        # compare to the current best
+        if not (self._best_chromosome is None) and \
+                self._is_fitter(chromosome.get_fitness(), self._best_chromosome.get_fitness()):
+            self._best_chromosome = chromosome
+
         # determine the position of the worst
         model = chromosome.get_model()
 
@@ -109,6 +123,9 @@ class Population:
                 worst_position = i
 
         # replace the worst
+        if self._population[worst_position] == self._best_chromosome:   # we remove the current best
+            self._best_chromosome = None
+
         self._population[worst_position] = chromosome
 
         return self._population
