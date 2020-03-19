@@ -36,7 +36,7 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
     if type(layers) is list:
         for i in range(len(layers)):
             layer = layers[i] + choice([1, -1]) * layers[i] * random() * 0.2
-            layers.append(int(layer))
+            layers[i] = int(layer)
 
     offspring_config = {
         "CRITERION": config.get("CRITERION", "undefined"),
