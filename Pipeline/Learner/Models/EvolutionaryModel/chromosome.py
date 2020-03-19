@@ -55,4 +55,8 @@ class Chromosome:
         return self._genotype
 
     def __repr__(self):
-        return str(self._genotype)
+        score = "not evaluated"
+        if self._phenotype:
+            score = "{:.5f}".format(self._phenotype)
+        return str("Score: {} Model: {}".format(score, str(self._genotype)))
+

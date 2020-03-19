@@ -40,6 +40,7 @@ data = read_csv("Datasets/titanic.csv")
 
 pipeline = Pipeline()  # create a pipeline
 model = pipeline.fit(data)  # learn from the data
+print(model)
 model.save("tmp_files/model")
 
 print(model)

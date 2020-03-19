@@ -237,10 +237,12 @@ class EvolutionaryModel(AbstractModel):
         if self._model is None:
             return "Evolutionary Model - Not configured"
         else:
-            # TODO
-            return "Evolutionary Model - Best model: {best} | Top models: {top}".format(
+            TOP = 10
+            best_models = self._population.get_best_n_description(TOP)
+            best_models_string = '\n'.join(best_models)
+            return "Evolutionary Model - \n  - Best model: \n{best} \n  - Top models: \n{top}".format(
                 best=str(self._best_model),
-                top="TODO"
+                top=best_models_string
             )
 
     def get_config(self) -> dict:

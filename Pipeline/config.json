@@ -59,7 +59,7 @@
   "TRAINING_CONFIG": {
     "TYPE": "evolutionary",
     "TASK": "classification",
-    "TIME": "30s",
+    "TIME": "4m",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "svm",
@@ -105,7 +105,7 @@
       "MODELS": ["neural_network"],
       "GENERAL_CRITERION": "accuracy",
       "TASK": "classification",
-      "POPULATION_SIZE": 4,
+      "POPULATION_SIZE": 16,
       "SEARCHING_TIME_SHARE": 0.5,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {

@@ -72,7 +72,7 @@ class Population:
                 best = chromosome
                 best_fitness = chromosome_fitness
 
-        self._best_chromosome = best        # cache the best for further usage
+        self._best_chromosome = best  # cache the best for further usage
         return best
 
     def get_best(self) -> Chromosome:
@@ -82,7 +82,7 @@ class Population:
         thus they all have a phenotype.
         :return:
         """
-        if not (self._best_chromosome is None):     # if the best chromosome is unchanged since the last calculation
+        if not (self._best_chromosome is None):  # if the best chromosome is unchanged since the last calculation
             return self._best_chromosome
 
         best = None
@@ -123,7 +123,7 @@ class Population:
                 worst_position = i
 
         # replace the worst
-        if self._population[worst_position] == self._best_chromosome:   # we remove the current best
+        if self._population[worst_position] == self._best_chromosome:  # we remove the current best
             self._best_chromosome = None
 
         self._population[worst_position] = chromosome
@@ -167,7 +167,7 @@ class Population:
 
         if model_type == DEEP_LEARNING_MODEL:
             return Chromosome(
-                deep_learning_mutation(chromosome.get_model(),self._input_size, self._output_size, self._task)
+                deep_learning_mutation(chromosome.get_model(), self._input_size, self._output_size, self._task)
             )
 
         return chromosome
@@ -215,3 +215,18 @@ class Population:
 
         return actual_fitness < best_fitness  # important: the general problem is considered
         # to be a minimization problem, thus a lower fitness is better
+
+    def get_best_n_description(self, n: int) -> list:
+        """
+            Returns the best n chromosomes' descriptions
+        :param n: the number of chromosomes to be returned
+        :return: list of strings
+        """
+        self._population.sort(key=lambda chromosome: chromosome.get_fitness())
+        descriptions = []
+
+        number = min(n, len(self._population))
+        for i in range(number):
+            descriptions.append(str(self._population[i]))
+
+        return descriptions
