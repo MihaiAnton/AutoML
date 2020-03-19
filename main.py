@@ -40,12 +40,13 @@ data = read_csv("Datasets/titanic.csv")
 
 pipeline = Pipeline()  # create a pipeline
 model = pipeline.fit(data)  # learn from the data
-print(model)
+print(model.model_type())
 model.save("tmp_files/model")
 
-print(model)
+
 
 model = load_model("tmp_files/model")
+print(model.model_type())
 
 X, Y = Splitter.XYsplit(pipeline.convert(data), "Survived")
 pred = model.predict(X)

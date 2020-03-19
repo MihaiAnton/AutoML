@@ -19,18 +19,15 @@ class EvolutionaryModel(AbstractModel):
         The API is similar to the AbstractModel's API
     """
 
-    def __init__(self, in_size: int, out_size: int, task: str = "", config: dict = None, predicted_name: list = None,
-                 dictionary: dict = None):
+    def __init__(self, in_size: int, out_size: int, task: str = "", config: dict = None, predicted_name: list = None):
         """
-            Initializes a evolutionary model
+                 Initializes a evolutionary model
         :param in_size: the size of the input data
         :param out_size: the size that needs to be predicted
         :param config: the configuration dictionary (expected to receive the EVOLUTIONARY_MODEL_CONFIG configuration)
+        :param task: the task to be done (REGRESSION / CLASSIFICATION)
+        :param predicted_name: the name of the attribute to be predicted to be predicted
         """
-        if type(dictionary) is dict:  # for internal use;
-            self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
-            return
-
         if config is None:
             config = {}
 
@@ -178,57 +175,13 @@ class EvolutionaryModel(AbstractModel):
         """
             Returns a dictionary representation of the model for further file saving.
         :return: dictionary with model encoding
-
-
         """
         # !!! should match _init_from_dictionary loading format
         # get the model data
-        model = None
-        if not (self._model is None):
-            model = self._model.to_dict()
+        if self._model is None:
+            raise EvolutionaryModelException("Cannot convert EvolutionaryModel to dict unless a train() is performed.")
 
-        data = {
-            "MODEL": model,
-            "METADATA": {
-                "PRED_NAME": self._predicted_name,
-                "TASK": self._task,
-                "CONFIG": self._config,
-                "INPUT_SIZE": self._input_size,
-                "OUTPUT_SIZE": self._output_size
-            }
-        }
-
-        return {
-            "MODEL_TYPE": self.model_type(),
-            "MODEL_DATA": data
-        }
-
-    def _init_from_dictionary(self, d: dict):
-        """
-            Inits the model from dictionary; sets the attributes to be as they were before saving.
-            It is assumed that the dictionary provided here is the one intended for this model type.
-                - should only be called from the constructor
-
-        :param d: dictionary previously created by to_dict
-        :return: None
-        """
-        # !!! should match to_dict loading format
-        d = d.get("MODEL_DATA")
-        data = d.get("METADATA")
-        model = d.get("MODEL")
-
-        # init the data
-        self._predicted_name = data.get("PRED_NAME")
-        self._task = data.get("TASK")
-        self._config = data.get("CONFIG")
-        self._input_size = data.get("INPUT_SIZE")
-        self._output_size = data.get("OUTPUT_SIZE")
-
-        # init the model
-        # TODO self._model = load_model(model)
-        # FIXME
-        from ...Models import load_model  # put here to avoid circular imports
-        self._model = load_model(model)
+        return self._model.to_dict()
 
     def model_type(self) -> str:
         return EVOLUTIONARY_MODEL
