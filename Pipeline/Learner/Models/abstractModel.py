@@ -37,7 +37,7 @@ class AbstractModel(ABC):
 
     @abstractmethod
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
-              callbacks: list = None) -> 'AbstractModel':
+              callbacks: list = None, verbose: bool = True) -> 'AbstractModel':
         """
             Trains the model with the data provided.
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
@@ -45,6 +45,7 @@ class AbstractModel(ABC):
         :param train_time: time of the training session in seconds: default 10 minutes
         :param X: the independent variables in form of Pandas DataFrame
         :param Y: the dependents(predicted) values in form of Pandas DataFrame
+        :param verbose: decides whether or not the model prints intermediary outputs
         :return: the model
         """
 

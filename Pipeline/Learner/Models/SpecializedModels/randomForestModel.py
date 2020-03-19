@@ -51,15 +51,16 @@ class RandomForestModel(AbstractModel):
 
     # noinspection DuplicatedCode
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
-              validation_split: float = 0.2) -> 'AbstractModel':
+              validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
-                Trains the model with the data provided.
-            :param validation_split: how much from the data(as percentage) should be used as validation
-            :param callbacks: a list of predefined callbacks that get called at every epoch
-            :param train_time: time of the training session in seconds: default 10 minutes
-            :param X: the independent variables in form of Pandas DataFrame
-            :param Y: the dependents(predicted) values in form of Pandas DataFrame
-            :return: the model
+            Trains the model with the data provided.
+        :param validation_split: how much from the data(as percentage) should be used as validation
+        :param callbacks: a list of predefined callbacks that get called at every epoch
+        :param train_time: time of the training session in seconds: default 10 minutes
+        :param X: the independent variables in form of Pandas DataFrame
+        :param Y: the dependents(predicted) values in form of Pandas DataFrame
+        :param verbose: decides whether or not the model prints intermediary outputs
+        :return: the model
         """
         # check once more the predicted names
         if self._predicted_name is None:
@@ -73,7 +74,7 @@ class RandomForestModel(AbstractModel):
             x_train = X.to_numpy()
             y_train = Y.to_numpy()
 
-            print("Training on {} samples...".format(len(y_train)))
+            print("Training on {} samples...".format(len(y_train))) if verbose else None
         else:
 
             if type(validation_split) != float:
@@ -86,7 +87,7 @@ class RandomForestModel(AbstractModel):
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))
 
-            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val)))
+            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val))) if verbose else None
 
         # prepare for time handling
         seconds_count = 0
@@ -170,12 +171,12 @@ class RandomForestModel(AbstractModel):
 
                     print("Epoch {} - Training {}: {} - Validation {}: {} - ETA: {}{}:{}:{}"
                           .format(epochs, loss_name, criterion_train, loss_name, criterion_val,
-                                  day, hour, minute, second))
+                                  day, hour, minute, second)) if verbose else None
                 else:
                     criterion_train = self._model.score(x_train, y_train)
-                    print("Epoch {} - Training {}: {} - ETA: {}{}:{}:{}".format(epochs, loss_name,
-                                                                                criterion_train,
-                                                                                day, hour, minute, second))
+                    print("Epoch {} - Training {}: {} - ETA: {}{}:{}:{}".format(epochs, loss_name, criterion_train,
+                                                                                day, hour, minute,
+                                                                                second)) if verbose else None
 
     def predict(self, X: DataFrame) -> DataFrame:
         """

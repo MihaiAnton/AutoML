@@ -25,6 +25,7 @@ class Chromosome:
     def eval(self, X: DataFrame, Y: DataFrame, task: str, criterion: str, time: int, validation_split: float) -> float:
         """
             Evaluates the model and returns a score (the fitness of the chromosome).
+        By default, the model is trained with verbose = None, so outputs do not combine with evolutionary model output.
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param time: time of the training session in seconds: default 10 minutes
         :param criterion: the criterion from the configuration file
@@ -34,7 +35,7 @@ class Chromosome:
         :return: chromosome's fitness
         """
         model = self.get_model()
-        model.train(X, Y, train_time=time, validation_split=validation_split)
+        model.train(X, Y, train_time=time, validation_split=validation_split, verbose=False)
         score = self._genotype.eval(X, Y, task, criterion)
         self._phenotype = score
         return score

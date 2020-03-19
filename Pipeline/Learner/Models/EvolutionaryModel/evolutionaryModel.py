@@ -74,7 +74,7 @@ class EvolutionaryModel(AbstractModel):
         return population
 
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
-              validation_split: float = 0.2) -> 'AbstractModel':
+              validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
                 Trains the model with the data provided.
             :param validation_split: percentage of the data to be used in validation; None if validation should not be used
@@ -82,6 +82,7 @@ class EvolutionaryModel(AbstractModel):
             :param train_time: time of the training session in seconds: default 10 minutes
             :param X: the independent variables in form of Pandas DataFrame
             :param Y: the dependents(predicted) values in form of Pandas DataFrame
+            :param verbose: decides whether or not the model prints intermediary outputs
             :return: the model
         """
         # define the task
@@ -110,9 +111,11 @@ class EvolutionaryModel(AbstractModel):
         # this means that 9*p epochs will be used, since one model is created per epoch
         model_eval_time = search_time / (self._config.get("POPULATION_SIZE", 10) * 10)
 
+        print("Evaluating population...") if verbose else None
         self._population.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
                               validation_split=validation_split)
         # searches for the best model
+        print("Searching for the best model...") if verbose else None
         while keep_searching:
             keep_searching = False
             epoch_start = time.time()
@@ -148,12 +151,14 @@ class EvolutionaryModel(AbstractModel):
                 keep_searching = True  # train one more epoch
 
             # output epoch details
-            print("Epoch {} -  Best Score: {:.5f} | Search time: {:.2f} seconds".format(epochs, population_best.get_fitness(), epoch_duration))
+            print("Epoch {:3d} -  Best Score: {:.5f} | Search time: {:.2f} seconds".format(
+                epochs, population_best.get_fitness(), epoch_duration)) if verbose else None
 
         # training the best model
+        print("Training the best model...") if verbose else None
         self._model = self._population.get_best().get_model()
-        best_model_time = train_time - time.now()  # the amount of seconds remaining
-        self._model.train(X, Y, best_model_time)
+        best_model_time = int(train_time - (time.time()-start_time))  # the amount of seconds remaining
+        self._model.train(X, Y, train_time=best_model_time, verbose=verbose)
 
         # return the trained best model
         return self._model
@@ -234,7 +239,7 @@ class EvolutionaryModel(AbstractModel):
         else:
             # TODO
             return "Evolutionary Model - Best model: {best} | Top models: {top}".format(
-                best="TODO",
+                best=str(self._best_model),
                 top="TODO"
             )
 

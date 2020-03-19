@@ -38,7 +38,7 @@ def load_model(source):
     elif model_type == SVM_MODEL:
         model = SvmModel(dictionary=dictionary)
     elif model_type == EVOLUTIONARY_MODEL:
-        model = EvolutionaryModel(dictionary=model_type)
+        model = EvolutionaryModel(0, 0, dictionary=model_type)
     # TODO add models as they are added in the SpecializedModels module
     else:
         raise ModelLoaderException(

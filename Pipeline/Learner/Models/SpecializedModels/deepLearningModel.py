@@ -120,14 +120,13 @@ class DeepLearningModel(AbstractModel):
 
         if self._task == CLASSIFICATION:
             mapping = self._classification_mapping["mapping"]
-            print(mapping)
             df = self._from_categorical(df, mapping)
         # check if the model is set for categorical purpose
 
         return df
 
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
-              callbacks: list = None):
+              callbacks: list = None, verbose: bool = True):
         """
             Trains the model according to the specifications provided.
         :param callbacks: a list of predefined callbacks that get called at every epoch
@@ -135,6 +134,7 @@ class DeepLearningModel(AbstractModel):
         :param X: the dependent variables to train with
         :param Y: the predicted variables
         :param train_time: the training time in seconds, default 10 minutes
+        :param verbose: decides whether or not the model prints intermediary outputs
         :return: self (trained model)
         """
         # define the task
@@ -196,7 +196,7 @@ class DeepLearningModel(AbstractModel):
             x_train = tensor(X.to_numpy()).float()
             y_train = tensor(Y.to_numpy()).float()
 
-            print("Training on {} samples...".format(len(y_train)))
+            print("Training on {} samples...".format(len(y_train))) if verbose else None
         else:
 
             if type(validation_split) != float:
@@ -214,7 +214,7 @@ class DeepLearningModel(AbstractModel):
             y_train = tensor(y_train).float()
             y_val = tensor(y_val).float()
 
-            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val)))
+            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val))) if verbose else None
 
         # prepare for time handling
         seconds_count = 0
@@ -300,11 +300,12 @@ class DeepLearningModel(AbstractModel):
 
                         print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
                               .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
-                                      day, hour, minute, second))
+                                      day, hour, minute, second)) if verbose else None
                     else:
                         print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs,
                                                                                       running_loss / x_train.shape[0],
-                                                                                      day, hour, minute, second))
+                                                                                      day, hour, minute,
+                                                                                      second)) if verbose else None
 
         return self
 
@@ -548,4 +549,3 @@ class DeepLearningModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
-
