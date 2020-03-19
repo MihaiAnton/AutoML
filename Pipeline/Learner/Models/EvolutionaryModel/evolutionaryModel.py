@@ -1,11 +1,11 @@
 from pandas import DataFrame
+import time
 
 from ..abstractModel import AbstractModel
 from ..constants import AVAILABLE_TASKS
 # TODO check more on this import problem from ...Models import load_model
 
 from ....Exceptions import EvolutionaryModelException
-
 from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
 from ..constants import AVAILABLE_TASKS
@@ -25,7 +25,7 @@ class EvolutionaryModel(AbstractModel):
             Initializes a evolutionary model
         :param in_size: the size of the input data
         :param out_size: the size that needs to be predicted
-        :param config: the configuration dictionary
+        :param config: the configuration dictionary (expected to receive the EVOLUTIONARY_MODEL_CONFIG configuration)
         """
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
@@ -51,6 +51,11 @@ class EvolutionaryModel(AbstractModel):
         self._model = None  # the final model, after the evolutionary phase
         self._model_score = None
 
+        # learning statistics
+        self._models_tried = []
+        self._epoch_bests = []
+        self._best_model = None
+
     @staticmethod
     def _create_population(in_size: int, out_size: int, task: str, config: dict = None) -> Population:
         """
@@ -68,13 +73,13 @@ class EvolutionaryModel(AbstractModel):
         population = Population(in_size, out_size, task, population_size, config)
         return population
 
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None,
-              validation: float = 0.2) -> 'AbstractModel':
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
+              validation_split: float = 0.2) -> 'AbstractModel':
         """
                 Trains the model with the data provided.
-            :param validation: percentage of the data to be used in validation; None if validation should not be used
+            :param validation_split: percentage of the data to be used in validation; None if validation should not be used
             :param callbacks: a list of predefined callbacks that get called at every epoch
-            :param time: time of the training session in seconds: default 10 minutes
+            :param train_time: time of the training session in seconds: default 10 minutes
             :param X: the independent variables in form of Pandas DataFrame
             :param Y: the dependents(predicted) values in form of Pandas DataFrame
             :return: the model
@@ -89,38 +94,68 @@ class EvolutionaryModel(AbstractModel):
         if self._predicted_name is None:
             self._predicted_name = list(Y.columns)
 
+        # get the training time parameters
+        search_time = self._config.get("SEARCHING_TIME_SHARE", 0.5) * train_time  # search for models
+
+        # set up time tracking
+        start_time = time.time()
+        search_final = start_time + search_time
+        epochs = 0
+        seconds_count = 0
+        keep_searching = True
+
+        # initial evaluation - needed in order to evaluate the fitness of all the chromosomes in the population
+        # as a general rule, we aim to generate a number of p*10 models, where p is the desired population
+        # thus, the total search time will be split accordingly so each model has an even time of evaluation
+        # this means that 9*p epochs will be used, since one model is created per epoch
+        model_eval_time = search_time / (self._config.get("POPULATION_SIZE", 10) * 10)
+
+        self._population.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
+                              validation_split=validation_split)
         # searches for the best model
-        # TODO using epochs now, convert to time later
-        EPOCHS = 100
+        while keep_searching:
+            keep_searching = False
+            epoch_start = time.time()
 
-        # initial evaluation
-        self._population.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), time * 0.6,
-                              validation_split=validation)
-
-        for epoch in range(EPOCHS):
-            print("======================= EPOCH {}".format(epoch))
+            # gather two chromosomes
             mother = self._population.selection()  # get the
             father = self._population.selection()  # parents
 
+            # combine them
             offspring = self._population.XO(mother, father)  # combine them
-            offspringm = self._population.mutation(offspring)  # perform a mutation
+            # mutate the result
+            offspring_m = self._population.mutation(offspring)  # perform a mutation
 
-            score = offspringm.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), time * 0.6,
-                                    validation_split=validation)  # evaluate the offspring
+            # evaluate the result
+            offspring_m.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
+                             validation_split=validation_split)
 
-            print("Evaluated mode: score {}".format(score))
-            if self._model_score is None or self._model_score > score:
-                self._model_score = score
-                self._model = offspringm.get_model()
+            # add it in the population
+            self._population.replace(offspring_m)
 
-            self._population.replace(offspringm)  # add it in the population
+            # update the best model
+            population_best = self._population.get_best()
+            self._best_model = population_best.get_model()
+            self._model_score = population_best.get_fitness()
 
-        # trains the best model
+            # epoch end: gather time data
+            epoch_end = time.time()
+            epoch_duration = epoch_end - epoch_start
+            seconds_count += epoch_duration
+            epochs += 1
+
+            if search_final - epoch_end > epoch_duration * .5:  # the remaining time is more than half of the last epoch
+                keep_searching = True  # train one more epoch
+
+            # output epoch details
+            print("Epoch {} -  Best Score: {:.5f} | Search time: {:.2f} seconds".format(epochs, population_best.get_fitness(), epoch_duration))
+
+        # training the best model
         self._model = self._population.get_best().get_model()
-        train_time = 0  # TODO decide the train time
-        self._model.train(X, Y, train_time)
+        best_model_time = train_time - time.now()  # the amount of seconds remaining
+        self._model.train(X, Y, best_model_time)
 
-        # returns it
+        # return the trained best model
         return self._model
 
     def predict(self, X: DataFrame) -> DataFrame:
@@ -205,3 +240,19 @@ class EvolutionaryModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
+
+    def summary(self) -> dict:
+        """
+            Returns a dictionary with statistics about training.
+            "EPOCHS_BESTS" and "MODELS_TRIED" contain list with dictionaries of form:
+                    {
+                        "DESCRIPTION": model description,
+                        "SCORE": model score
+                    }
+        :return: dictionary with statistics
+        """
+        return {
+            "EPOCH_BESTS": self._epoch_bests,
+            "BEST_MODEL": self._best_model,
+            "MODELS_TRIED": self._models_tried
+        }

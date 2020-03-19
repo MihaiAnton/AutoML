@@ -55,7 +55,7 @@ class Population:
         """
             Evaluates the population
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
-        :param time: time of the training session in seconds: default 10 minutes
+        :param time: time of the training session for each model in seconds
         :param criterion: the criterion from the configuration file
         :param task: the task (CLASSIFICATION/REGRESSION)
         :param X: the data to predict an output from
