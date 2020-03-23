@@ -62,13 +62,13 @@ class Pipeline:
         :param default_config_path: if the pipeline is used with a configuration file located elsewhere than
                     the default location; if provided, this path will be used when creating the configuration
         :param kwargs
-                - include "dynamic=True" or "dynamic_call=True" if the argument list to enable dynamic pipeline call
+                - include "dynamic_call=True" in the argument list to enable dynamic pipeline call
         Usage:
             if provided any data, the Pipeline will init itself from that dictionary
             otherwise, if provided a config it will use that, if not it will try to read the config from file
                        if a mapper file is provided the processor will be initialized with that
         """
-        if kwargs.get("dynamic_call", False) or kwargs.get("dynamic", False):
+        if kwargs.get("dynamic_call", False):
             self.DYNAMIC_CALL = True
 
         # data processing attributes
@@ -336,7 +336,8 @@ class Pipeline:
         :return: dictionary with the encodings
         """
         if path is None:
-            path = os.path.join(os.getcwd(), 'Pipeline', 'config.json')
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            path = os.path.join(dir_path, 'config.json')
 
         if not os.path.exists(path):
             raise PipelineException("Configuration Json file could not be parsed from source {}.".format(path))
