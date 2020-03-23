@@ -124,7 +124,7 @@ class DeepLearningModel(AbstractModel):
             try:
                 df_mapped = self._from_categorical(df, mapping)
             except KeyError:
-                print(mapping)
+                print(mapping)  # TODO remove later
                 print(9)
             df = df_mapped
         # check if the model is set for categorical purpose
@@ -241,8 +241,10 @@ class DeepLearningModel(AbstractModel):
 
             running_loss = 0
             start_index = 0
+            batch_count = 0
 
             while start_index < x_train.shape[0]:
+                batch_count += 1
                 batch_x = x_train[start_index:start_index + batch_size]
                 batch_y = y_train[start_index:start_index + batch_size]
 
@@ -301,12 +303,23 @@ class DeepLearningModel(AbstractModel):
                     second = date.tm_sec
 
                     if not (validation_split is None):
+
+                        self._model.zero_grad()
+                        self._model.eval()
                         pred_val = self._model(x_val)
                         loss_val = criterion(pred_val, y_val).item()
 
+                        self._model.train()
+
+                        # previous loss display - not consistent when training loss was compared to validation loss
+                        # print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
+                        #       .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
+                        #               day, hour, minute, second)) if verbose else None
+
                         print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
-                              .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
+                              .format(epochs, running_loss/batch_count, loss_val,
                                       day, hour, minute, second)) if verbose else None
+
                     else:
                         print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs,
                                                                                       running_loss / x_train.shape[0],
@@ -388,13 +401,13 @@ class DeepLearningModel(AbstractModel):
         self._activations = activations
 
         # dropout
-        if type(dropout_requested) not in [float, list]:
+        if type(dropout_requested) not in [float, list, int]:
             warnings.warn(
                 "DeepLearningModel: provided dropout type {} not understood; using {} as default dropout."
                     .format(type(dropout_requested),self.DEFAULT_DROPOUT), RuntimeWarning)
             dropout_requested = self.DEFAULT_DROPOUT
 
-        if type(dropout_requested) is float:
+        if type(dropout_requested) in [float, int]:
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
             dropouts = dropout_requested[:(len(hidden_layers))]
