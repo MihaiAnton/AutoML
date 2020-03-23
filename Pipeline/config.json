@@ -59,7 +59,7 @@
   "TRAINING_CONFIG": {
     "TYPE": "evolutionary",
     "TASK": "classification",
-    "TIME": "20s",
+    "TIME": "2m",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "svm",
@@ -105,8 +105,8 @@
       "MODELS": ["neural_network"],
       "GENERAL_CRITERION": "accuracy",
       "TASK": "classification",
-      "POPULATION_SIZE": 120,
-      "SEARCHING_TIME_SHARE": 0.5,
+      "POPULATION_SIZE": 20,
+      "SEARCHING_TIME_SHARE": 0.2,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {
         "OPTIMIZER_CHOICE" : ["Adam","SGD"],

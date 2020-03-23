@@ -3,7 +3,7 @@ from pandas import read_csv
 from Pipeline import Pipeline, load_pipeline
 
 
-data = read_csv("Datasets/titanic.csv")
+data = read_csv("../Datasets/titanic.csv")
 
 pipeline = Pipeline()
 
