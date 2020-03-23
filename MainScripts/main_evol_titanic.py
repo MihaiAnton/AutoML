@@ -7,7 +7,21 @@ from Pipeline import Pipeline
 data = read_csv("../Datasets/titanic.csv")
 
 # create a pipeline with the default configuration
-pipeline = Pipeline()
+config = {
+    "DATA_PROCESSING": True,
+    "DATA_PROCESSING_CONFIG": {
+        "PREDICTED_COLUMN_NAME": "Survived",
+    },
+    "TRAINING": True,
+    "TRAINING_CONFIG": {
+        "TYPE": "evolutionary",
+        "TASK": "classification",
+        "TIME": "2m",
+        "PREDICTED_COLUMN_NAME": "Survived"
+    }
+}
+
+pipeline = Pipeline(config=config)
 
 # fit the data to the pipeline
 model = pipeline.fit(data)

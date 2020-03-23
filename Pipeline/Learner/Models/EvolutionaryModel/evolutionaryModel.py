@@ -2,8 +2,6 @@ from pandas import DataFrame
 import time
 
 from ..abstractModel import AbstractModel
-from ..constants import AVAILABLE_TASKS
-# TODO check more on this import problem from ...Models import load_model
 
 from ....Exceptions import EvolutionaryModelException
 from ..modelTypes import EVOLUTIONARY_MODEL

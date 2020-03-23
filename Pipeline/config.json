@@ -104,7 +104,6 @@
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
       "GENERAL_CRITERION": "accuracy",
-      "TASK": "classification",
       "POPULATION_SIZE": 20,
       "SEARCHING_TIME_SHARE": 0.2,
 

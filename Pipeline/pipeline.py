@@ -10,6 +10,7 @@ from .Learner.Models.abstractModel import AbstractModel
 from .Learner.learner import Learner
 from .DataProcessor.DataSplitting.splitter import Splitter
 from .Learner.Models.model_loader import load_model
+from .configuration_manager import complete_configuration
 
 
 def load_pipeline(file: str) -> 'Pipeline':
@@ -79,7 +80,7 @@ class Pipeline:
             if config is None:
                 self._config = Pipeline._read_config_file(default_config_path)
             else:
-                self._config = config
+                self._config = complete_configuration(config, self._read_config_file())
             if self._config.get("DATA_PROCESSING", False):
                 self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), file=mapper_file)
 
