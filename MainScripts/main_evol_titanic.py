@@ -16,7 +16,7 @@ config = {
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "classification",
-        "TIME": "2m",
+        "TIME": "4m",
         "PREDICTED_COLUMN_NAME": "Survived"
     }
 }

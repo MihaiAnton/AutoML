@@ -101,6 +101,9 @@ class DeepLearningModel(AbstractModel):
         self._optimizer = None
         self._train_mode = True
 
+        # training metrics useful for evaluation
+        self._epoch_loss_train = []  # for each epoch the loss is collected in this array
+
     def predict(self, X: DataFrame) -> DataFrame:
         """
             Predicts a set of data transformed to fit to the model's input expectation
@@ -131,6 +134,7 @@ class DeepLearningModel(AbstractModel):
 
         return df
 
+    # noinspection DuplicatedCode
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
               callbacks: list = None, verbose: bool = True):
         """
@@ -266,6 +270,9 @@ class DeepLearningModel(AbstractModel):
                 start_index += batch_size
 
             else:
+                # add the running loss to the losses array for future evaluation taking loss into consideration
+                self._epoch_loss_train.append(running_loss)
+
                 epoch_end = time.time()
                 epoch_duration = epoch_end - epoch_start
                 # predict the end of the training session
@@ -317,7 +324,7 @@ class DeepLearningModel(AbstractModel):
                         #               day, hour, minute, second)) if verbose else None
 
                         print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
-                              .format(epochs, running_loss/batch_count, loss_val,
+                              .format(epochs, running_loss / batch_count, loss_val,
                                       day, hour, minute, second)) if verbose else None
 
                     else:
@@ -327,6 +334,43 @@ class DeepLearningModel(AbstractModel):
                                                                                       second)) if verbose else None
 
         return self
+
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str):
+        """
+            Returns the eval function for the base class adding other metrics to it like convergence rate,
+        plateau regions and non-descending loss sections.
+        """
+        base_loss = AbstractModel.eval(self, X, Y, task, metric)
+        final_loss = base_loss
+
+        loss_diff = [self._epoch_loss_train[i-1] - self._epoch_loss_train[i]
+                     for i in range(len(self._epoch_loss_train)-1)]
+
+        # based on the list of losses per epoch, consider the following metrics
+        # overall drop in loss - from the first epoch to the last
+        drop = self._epoch_loss_train[0] - self._epoch_loss_train[-1]   # the higher the drop the better
+        if drop == 0:
+            drop = 0.1
+        final_loss += base_loss * abs((1/drop))                         # the lower the drop, the more the loss will increase
+
+        # of all consecutive epoch pairs, how many, as percentage, had positive loss change
+        positive_drops = 0
+        for diff in loss_diff:
+            if diff > 0:
+                positive_drops += 1
+
+        final_loss += base_loss * (positive_drops/len(loss_diff))
+
+        # compute the standard deviation of loss changes: the lower the better
+        # (we want a steady decrease rather than a stepped one)
+        mean_val = np.mean(loss_diff)
+
+        if mean_val < 0.1:
+            mean_val = 0.1
+
+        final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
+
+        return final_loss
 
     def create_model(self):
         """
@@ -404,7 +448,7 @@ class DeepLearningModel(AbstractModel):
         if type(dropout_requested) not in [float, list, int]:
             warnings.warn(
                 "DeepLearningModel: provided dropout type {} not understood; using {} as default dropout."
-                    .format(type(dropout_requested),self.DEFAULT_DROPOUT), RuntimeWarning)
+                    .format(type(dropout_requested), self.DEFAULT_DROPOUT), RuntimeWarning)
             dropout_requested = self.DEFAULT_DROPOUT
 
         if type(dropout_requested) in [float, int]:
