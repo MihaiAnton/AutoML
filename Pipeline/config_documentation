@@ -127,9 +127,22 @@
     "EVOLUTIONARY_MODEL_CONFIG": {              ---> if TYPE is "evolutionary", provide this object
       "MODELS": ["neural_network"]              ---> list of allowed models - the models to search for
 
-      "NEURAL_NETWORK_CONFIG": {
+      "GENERAL_CRITERION": "accuracy",          ---> "mean_absolute_error", "mean_squared_error", "mean_squared_log_error", "accuracy", "balanced_accuracy"
+                                                           \_ the generic criterion used in evaluation
+      "POPULATION_SIZE": 8,                     ---> positive integer, the initial model population
+      "SEARCHING_TIME_SHARE": 0.5,              ---> float in [0.1, 0.9] - the percentage of time taken by searching
 
+      "NEURAL_NETWORK_EVOL_CONFIG": {           ---> the choice configuration for neural networks
+                                                            \_(the documentation below presents the recommended ranges and all the possible choices; feel free to remove if necessary)
+        "OPTIMIZER_CHOICE" : ["Adam","SGD"],    ---> the optimizer choice for the network
+        "LEARNING_RATE_RANGE": [0.000001, 0.1], ---> the range for the random learning rate
+        "MOMENTUM_RANGE": [0,1],                ---> the range for the random momentum (used only by SGD)
+        "HIDDEN_LAYERS_CHOICES": ["smooth",[10,32,8]],      ---> the choice of hidden layers (either smooth, as defined above in the neural network configuration,
+                                                                            wither as a vector like [min_layer_size, max_layer_size, max_layers]
+        "ACTIVATION_CHOICES": ["sigmoid","relu","linear"],  ---> the choices for the activation functions
+        "DROPOUT_RANGE": [0,1]                              ---> the range for the random dropout
       }
+    }
 
     }
   }
