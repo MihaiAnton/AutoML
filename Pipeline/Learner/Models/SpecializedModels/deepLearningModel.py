@@ -116,10 +116,14 @@ class DeepLearningModel(AbstractModel):
 
         processed = tensor(X.to_numpy()).float()
         output = self._model(processed)
+        del processed
 
         numpy_array = np.asarray(output.detach())
+        del output
 
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
+        del numpy_array
+
         df.fillna(0, inplace=True)  # TODO find better alternative
                                     # was added just in case a value is nan
 
@@ -181,6 +185,7 @@ class DeepLearningModel(AbstractModel):
             criterion = nn.BCELoss()
         else:
             criterion = nn.MSELoss()
+        del requested_criterion
 
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
         requested_lr = self._config.get("LEARNING_RATE", self.DEFAULT_LR)
@@ -195,6 +200,7 @@ class DeepLearningModel(AbstractModel):
             raise DeepLearningModelException("Optimizer {} not understood.".format(requested_optimizer))
 
         self._optimizer = optimizer
+        del requested_optimizer
         batch_size = self._config.get("BATCH_SIZE", self.DEFAULT_BATCH_SIZE)
 
         # create the train and validation data sets
@@ -250,10 +256,12 @@ class DeepLearningModel(AbstractModel):
 
                 optimizer.zero_grad()
                 output = self._model(batch_x)
+                del batch_x
 
                 losses = []
                 for out in range(len(self._predicted_name)):
                     losses.append(criterion(output[:, out], batch_y[:, out]))
+                del output
 
                 loss = losses[0]
                 for i in range(1, len(losses)):

@@ -122,6 +122,9 @@ class Population:
                 worst_fitness = chromosome_fitness
                 worst_position = i
 
+        # delete the worst
+        del self._population[worst_position]
+
         # replace the worst
         if self._population[worst_position] == self._best_chromosome:  # we remove the current best
             self._best_chromosome = None
