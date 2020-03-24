@@ -24,7 +24,7 @@ config = {
 pipeline = Pipeline(config=config)
 
 # fit the data to the pipeline
-model = pipeline.fit(data)
+model = pipeline.fit(data, verbose=False)
 
 # save the model for further reusage
 model_save_file = "./models/titanic_evol_model"

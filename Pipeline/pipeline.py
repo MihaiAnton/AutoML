@@ -156,7 +156,7 @@ class Pipeline:
         self._mapper.set("X_COLUMNS_PROCESS", list(data.columns))
         self._mapper.set("CONVERSION_DONE", True)
         end = time.time()
-        print("Processed in {0:.4f} seconds.".format(end - start))
+        print("Processed in {0:.4f} seconds.".format(end - start)) if verbose else None
         self._mapper.set(self.STATE_MACRO, self.PROCESSED_STATE)
         return result
 
@@ -170,7 +170,6 @@ class Pipeline:
         """
         start = time.time()
 
-        result = data
         if self._processor is None:
             if self._mapper_file is None:
                 raise PipelineException(
@@ -178,7 +177,7 @@ class Pipeline:
             self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), self._mapper_file)
         result = self._processor.convert(data, verbose=verbose)
         end = time.time()
-        print("Converted in {0:.4f} seconds.".format(end - start))
+        print("Converted in {0:.4f} seconds.".format(end - start)) if verbose else None
         self._mapper.set(self.STATE_MACRO, self.CONVERTED_STATE)
         return result
 
@@ -205,7 +204,7 @@ class Pipeline:
             result = self._learner.learn(X=x, Y=y, verbose=verbose)
 
         end = time.time()
-        print("Learnt in {0:.4f} seconds.".format(end - start))
+        print("Learnt in {0:.4f} seconds.".format(end - start)) if verbose else None
         self._model = result
         self._mapper.set(self.STATE_MACRO, self.LEARNT_STATE)
         return result

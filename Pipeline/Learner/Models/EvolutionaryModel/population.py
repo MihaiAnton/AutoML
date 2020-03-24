@@ -123,7 +123,9 @@ class Population:
                 worst_position = i
 
         # delete the worst
-        del self._population[worst_position]
+        to_delete = self._population[worst_position]
+        self._population[worst_position] = None
+        del to_delete
 
         # replace the worst
         if self._population[worst_position] == self._best_chromosome:  # we remove the current best
