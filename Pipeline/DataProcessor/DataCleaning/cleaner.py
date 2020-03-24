@@ -23,9 +23,10 @@ class Cleaner:
         self._config = config
         self._mapper = Mapper("Cleaner")
 
-    def clean(self, data: DataFrame, mapper: 'Mapper', predicted_col: str = None) -> DataFrame:
+    def clean(self, data: DataFrame, mapper: 'Mapper', predicted_col: str = None, verbose: bool = True) -> DataFrame:
         """
             Cleans the data by removing rows/columns where necessary.
+        :param verbose: defines whether or not the clean() method will print output to stdout
         :param predicted_col: which is the column name that we want to predict
         :param data: the raw data that needs to be cleaned
         :param mapper: the mapper class that saves all the changes

@@ -57,10 +57,11 @@ class Processor:
         """
         return self._mapper
 
-    def process(self, data: DataFrame) -> DataFrame:
+    def process(self, data: DataFrame, verbose: bool = True) -> DataFrame:
         """
             Completes the whole cycle of automated feature engineering.
             Received raw data and returns data ready to be fed into the next step of the pipeline or into a learning algorithm.
+        :param verbose: decides if the process() method will produce any output
         :param data: Raw data input, in form of DataFrame
         :return: cleaned and processed data, in form of DataFrame
         :exception: DataProcessorException
@@ -77,7 +78,7 @@ class Processor:
             self._mapper.set("DATA_CLEANING", True)
             cleaner = Cleaner(self._config.get("DATA_CLEANING_CONFIG", {}))
             y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
-            data = cleaner.clean(data, self._mapper, y_column)
+            data = cleaner.clean(data, self._mapper, y_column, verbose=verbose)
 
         # 2. Data splitting
         y_column = self._config.get('PREDICTED_COLUMN_NAME', None)
@@ -93,7 +94,7 @@ class Processor:
             self._mapper.set("FEATURE_ENGINEERING", True)
 
             engineer = Engineer(self._config.get("FEATURE_ENGINEERING_CONFIG", {}))
-            X = engineer.process(X, self._mapper, {})
+            X = engineer.process(X, self._mapper, {}, verbose=verbose)
 
         # 4. Retrieve mappings
         # mappings are already in the mapper field, which would be saved to file as soon as the save_processor is called
@@ -130,10 +131,11 @@ class Processor:
 
         return data
 
-    def convert(self, data: DataFrame) -> DataFrame:
+    def convert(self, data: DataFrame, verbose: bool = True) -> DataFrame:
         """
             Converts data to a format previously determined by the process method.
             Used after data processing for further predictions.
+        :param verbose: decides whether the convert() method will produce any output
         :param data: Raw data input for prediction purpose
         :return: data transformed in a format previously determined by the logic within process method
         :exception:
@@ -160,7 +162,7 @@ class Processor:
 
         # 3. Feature engineering
         if self._mapper.get("FEATURE_ENGINEERING", False):  # feature engineering set to be done
-            data = Engineer.convert(data, self._mapper)
+            data = Engineer.convert(data, self._mapper, verbose=verbose)
 
         # 4. Process y column
         if split:
@@ -179,7 +181,6 @@ class Processor:
         if self._mapper.get("PROCESSED_Y", False):
             new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=self._mapper.get("Y_NEW_NAMES"))
             for i, r in data[[y_column]].iterrows():
-                # print(str(info.get("name") + "_" + str(r[0])))
                 if str(y_column + "_" + str(r[0])) in new_data.columns:
                     new_data.iloc[i][str(y_column + "_" + str(r[0]))] = 1
 
@@ -197,13 +198,12 @@ class Processor:
         try:
             self._mapper.set("PROCESSOR_CONFIG", self._config)
             self._mapper.save_to_file(file)
-        except:
-            raise DataProcessorException("Error while saving processor to file {}.".format(file))
+        except Exception as e:
+            raise DataProcessorException("Error while saving processor to file {}.Base error: {}.".format(file, e))
 
     @staticmethod
     def load_processor(file: str) -> 'Processor':
         """
-
         :param file: the file where a processor has been previously saved with the save_processor method
         :return: the instance of a processor class with the logic within the file
         :exception:

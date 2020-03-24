@@ -137,9 +137,10 @@ class Pipeline:
         info[source] = new_info
         self._mapper.set("DATA_METADATA", info)
 
-    def process(self, data: DataFrame) -> DataFrame:
+    def process(self, data: DataFrame, verbose: bool = True) -> DataFrame:
         """
             Processes the data according to the configuration in the config file
+        :param verbose: decides if the process() method will produce any output
         :param data: DataFrame containing the raw data that has to be transformed
         :return: DataFrame with the modified data
         """
@@ -150,7 +151,7 @@ class Pipeline:
         # 1. Data processing
 
         if self._config.get("DATA_PROCESSING", False):
-            result = self._processor.process(result)
+            result = self._processor.process(result, verbose=verbose)
 
         self._mapper.set("X_COLUMNS_PROCESS", list(data.columns))
         self._mapper.set("CONVERSION_DONE", True)
@@ -159,9 +160,10 @@ class Pipeline:
         self._mapper.set(self.STATE_MACRO, self.PROCESSED_STATE)
         return result
 
-    def convert(self, data: DataFrame) -> DataFrame:
+    def convert(self, data: DataFrame, verbose: bool = True) -> DataFrame:
         """
             Converts the data to the representation previously learned by the DataProcessor
+        :param verbose: decides if the convert() method will produce any output
         :param data: DataFrame containing data similar to what the
         :return: DataFrame containing the converted data
         :exception: PipelineException
@@ -174,15 +176,16 @@ class Pipeline:
                 raise PipelineException(
                     "Mapper file not set. In order to convert data, provide a mapper file to the constructor.")
             self._processor = Processor(self._config.get("DATA_PROCESSING_CONFIG"), self._mapper_file)
-        result = self._processor.convert(data)
+        result = self._processor.convert(data, verbose=verbose)
         end = time.time()
         print("Converted in {0:.4f} seconds.".format(end - start))
         self._mapper.set(self.STATE_MACRO, self.CONVERTED_STATE)
         return result
 
-    def learn(self, data: DataFrame, y_column: str = None) -> AbstractModel:
+    def learn(self, data: DataFrame, y_column: str = None, verbose: bool = True) -> AbstractModel:
         """
             Learns a model from the data.
+        :param verbose: decides if the the learn() method should produce any output
         :param y_column: the name of the predicted column
         :param data: DataFrame containing the dataset to learn
         :return: trained model or None if trained is not set to true in config
@@ -199,7 +202,7 @@ class Pipeline:
             x, y = Splitter.XYsplit(data, y_column)
             self._mapper.set("X_COLUMNS_TRAIN", list(data.columns))
 
-            result = self._learner.learn(X=x, Y=y)
+            result = self._learner.learn(X=x, Y=y, verbose=verbose)
 
         end = time.time()
         print("Learnt in {0:.4f} seconds.".format(end - start))
@@ -207,9 +210,10 @@ class Pipeline:
         self._mapper.set(self.STATE_MACRO, self.LEARNT_STATE)
         return result
 
-    def predict(self, data: DataFrame) -> DataFrame:
+    def predict(self, data: DataFrame, verbose: bool = False) -> DataFrame:
         """
             Predicts the output of the data using a previously learnt module.
+        :param verbose: decide is the predict method should output information to the console
         :param data: DataFrame with the x values to be predicted
         :return: DataFrame with the predicted values
         :exception PipelineException when no model has been previously learnt
@@ -243,30 +247,32 @@ class Pipeline:
             raise PipelineException("Expected model with columns {}; received {}"
                                     .format(self._mapper.get("X_COLUMNS_TRAIN", []), list(data.columns)))
 
-    def fit(self, data: DataFrame):
+    def fit(self, data: DataFrame, verbose: bool = True):
         """
             Completes the pipeline as specified in the configuration file.
+        :param verbose: decides if the method fit() and all the methods called in it should produce any output
         :param data: DataFrame with raw data
         :return: data/ cleaned data/ processed data/ trained model ( based on the choices in the config file)
         """
 
         # Iterating over the pipeline steps
         # 1. Data processing
-        result = self.process(data)
+        result = self.process(data, verbose=verbose)
 
         # 2. Learning
-        result = self.learn(result)
+        result = self.learn(result, verbose=verbose)
 
         return result
 
-    def __call__(self, data: DataFrame):
+    def __call__(self, data: DataFrame, verbose: bool = True):
         """
             Calls the fit method by calling the pipeline.
+        :param verbose: decides if the call on a pipeliene should produce any output
         :param data: DataFrame with raw data
         :return: data/ cleaned data/ processed data/ trained model ( based on the choices in the config file)
         """
         if self.DYNAMIC_CALL is False:
-            return self.fit(data)
+            return self.fit(data, verbose=verbose)
 
         else:  # decide what to do depending on the state
             metadata = self._mapper.get("DATA_METADATA", {})
@@ -274,7 +280,7 @@ class Pipeline:
 
             if state == self.RAW_STATE:  # follow the configuration
                 print("Pipeline Dynamic Call: fit()")
-                return self.fit(data)
+                return self.fit(data, verbose=verbose)
 
             if data.shape == metadata.get("process", {}).get("shape", ()):  # probably a conversion is wanted
                 if state == self.LEARNT_STATE:
@@ -283,19 +289,19 @@ class Pipeline:
 
                 else:
                     print("Pipeline Dynamic Call: convert()")
-                    return self.convert(data)
+                    return self.convert(data, verbose=verbose)
 
             elif data.shape[1] == metadata.get("process", {}).get("shape", (-1, -1))[1] - 1:
                 # if a model is present -> prediction ; else -> conversion
                 if self._model is None:
                     print("Pipeline Dynamic Call: convert()")
-                    return self.convert(data)
+                    return self.convert(data, verbose=verbose)
 
                 else:
                     print("Pipeline Dynamic Call: fit()")
-                    return self.predict(data)
+                    return self.predict(data, verbose=verbose)
 
-            return self.fit(data)
+            return self.fit(data, verbose=verbose)
 
     def save(self, file: str, include_model: bool = True) -> 'Pipeline':
         """

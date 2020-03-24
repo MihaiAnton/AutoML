@@ -36,10 +36,16 @@ class Learner:
         self._model_factory = ModelFactory(self._config)
         self._model = model
 
-    def learn(self, X: DataFrame, Y: DataFrame, input_size: int = None, output_size: int = None) -> AbstractModel:
+    def learn(self, X: DataFrame, Y: DataFrame, input_size: int = None, output_size: int = None, verbose: bool = True) \
+            -> AbstractModel:
         """
             Learns based on the configuration provided.
-        :return: learnt model and statistics
+        :param X: the data to learn from
+        :param Y: the predictions to compare to
+        :param input_size: the input size of the data
+        :param output_size: the output size of the prediction
+        :param verbose: decides whether the learn() method should produce any output
+        :return: the trained model
         """
         # parameter validation
         if type(input_size) is int:
@@ -68,7 +74,7 @@ class Learner:
 
         # trains the model
         train_time = self._convert_train_time(self._config.get("TIME", "10m"))
-        model.train(X, Y, train_time)
+        model.train(X, Y, train_time, verbose=verbose)  # here's where the magic happens
 
         # returns it
         self._model = model
