@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from .modelTypes import DEEP_LEARNING_MODEL as MODEL_TYPE
+from ..modelTypes import DEEP_LEARNING_MODEL
 from ..constants import AVAILABLE_TASKS, CLASSIFICATION
 
 
@@ -66,17 +66,23 @@ class DeepLearningModel(AbstractModel):
     TEMPORARY_FILE = ".tmp_model_file"
 
     def __init__(self, in_size, out_size, task: str = "", config: dict = None, predicted_name: list = None,
-                 dictionary=None):
+                 dictionary: dict = None):
         """
             Initializes a deep learning model.
             :param in_size: the input size of the neural network
             :param out_size: the predicted size of the network
-            :param config: the configuration map
+            :param config: the configuration map (expected to get the NEURAL_NETWORK_CONFIG part of the default model)
             :param task: the type of learning that is wanted to be done
         """
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
+
+        # data used for printing
+        self._configured = False  # defines if the model has been configured or is still blank
+        self._layers = []
+        self._activations = []
+        self._dropouts = []
 
         if config is None:
             config = {}
@@ -95,6 +101,9 @@ class DeepLearningModel(AbstractModel):
         self._optimizer = None
         self._train_mode = True
 
+        # training metrics useful for evaluation
+        self._epoch_loss_train = []  # for each epoch the loss is collected in this array
+
     def predict(self, X: DataFrame) -> DataFrame:
         """
             Predicts a set of data transformed to fit to the model's input expectation
@@ -111,21 +120,27 @@ class DeepLearningModel(AbstractModel):
         numpy_array = np.asarray(output.detach())
 
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
+        df.fillna(0, inplace=True)  # TODO find better alternative
+                                    # was added just in case a value is nan
 
         if self._task == CLASSIFICATION:
             mapping = self._classification_mapping["mapping"]
-            df = self._from_categorical(df, mapping)
-        # check if the model is set for categorical purpose
+            df_mapped = self._from_categorical(df, mapping)
+            df = df_mapped
 
         return df
 
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2):
+    # noinspection DuplicatedCode
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
+              callbacks: list = None, verbose: bool = True):
         """
             Trains the model according to the specifications provided.
+        :param callbacks: a list of predefined callbacks that get called at every epoch
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param X: the dependent variables to train with
         :param Y: the predicted variables
         :param train_time: the training time in seconds, default 10 minutes
+        :param verbose: decides whether or not the model prints intermediary outputs
         :return: self (trained model)
         """
         # define the task
@@ -187,7 +202,7 @@ class DeepLearningModel(AbstractModel):
             x_train = tensor(X.to_numpy()).float()
             y_train = tensor(Y.to_numpy()).float()
 
-            print("Training on {} samples...".format(len(y_train)))
+            print("Training on {} samples...".format(len(y_train))) if verbose else None
         else:
 
             if type(validation_split) != float:
@@ -205,7 +220,7 @@ class DeepLearningModel(AbstractModel):
             y_train = tensor(y_train).float()
             y_val = tensor(y_val).float()
 
-            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val)))
+            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val))) if verbose else None
 
         # prepare for time handling
         seconds_count = 0
@@ -226,8 +241,10 @@ class DeepLearningModel(AbstractModel):
 
             running_loss = 0
             start_index = 0
+            batch_count = 0
 
             while start_index < x_train.shape[0]:
+                batch_count += 1
                 batch_x = x_train[start_index:start_index + batch_size]
                 batch_y = y_train[start_index:start_index + batch_size]
 
@@ -249,6 +266,9 @@ class DeepLearningModel(AbstractModel):
                 start_index += batch_size
 
             else:
+                # add the running loss to the losses array for future evaluation taking loss into consideration
+                self._epoch_loss_train.append(running_loss)
+
                 epoch_end = time.time()
                 epoch_duration = epoch_end - epoch_start
                 # predict the end of the training session
@@ -286,25 +306,74 @@ class DeepLearningModel(AbstractModel):
                     second = date.tm_sec
 
                     if not (validation_split is None):
+
+                        self._model.zero_grad()
+                        self._model.eval()
                         pred_val = self._model(x_val)
                         loss_val = criterion(pred_val, y_val).item()
 
+                        self._model.train()
+
+                        # previous loss display - not consistent when training loss was compared to validation loss
+                        # print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
+                        #       .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
+                        #               day, hour, minute, second)) if verbose else None
+
                         print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
-                              .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
-                                      day, hour, minute, second))
+                              .format(epochs, running_loss / batch_count, loss_val,
+                                      day, hour, minute, second)) if verbose else None
+
                     else:
                         print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs,
                                                                                       running_loss / x_train.shape[0],
-                                                                                      day, hour, minute, second))
+                                                                                      day, hour, minute,
+                                                                                      second)) if verbose else None
 
         return self
+
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str):
+        """
+            Returns the eval function for the base class adding other metrics to it like convergence rate,
+        plateau regions and non-descending loss sections.
+        """
+        base_loss = AbstractModel.eval(self, X, Y, task, metric)
+        final_loss = base_loss
+
+        loss_diff = [self._epoch_loss_train[i-1] - self._epoch_loss_train[i]
+                     for i in range(len(self._epoch_loss_train)-1)]
+
+        # based on the list of losses per epoch, consider the following metrics
+        # overall drop in loss - from the first epoch to the last
+        drop = self._epoch_loss_train[0] - self._epoch_loss_train[-1]   # the higher the drop the better
+        if drop == 0:
+            drop = 0.1
+        final_loss += base_loss * abs((1/drop))                         # the lower the drop, the more the loss will increase
+
+        # of all consecutive epoch pairs, how many, as percentage, had positive loss change
+        positive_drops = 0
+        for diff in loss_diff:
+            if diff > 0:
+                positive_drops += 1
+
+        final_loss += base_loss * (positive_drops/len(loss_diff))
+
+        # compute the standard deviation of loss changes: the lower the better
+        # (we want a steady decrease rather than a stepped one)
+        mean_val = np.mean(loss_diff)
+
+        if mean_val < 0.1:
+            mean_val = 0.1
+
+        final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
+
+        return final_loss
 
     def create_model(self):
         """
             Creates a neural network as specified in the configuration
         :return:
         """
-
+        self._configured = True
         # define network detail
         # get the configured items
         hidden_layers_requested = self._config.get("HIDDEN_LAYERS", "smooth")
@@ -313,9 +382,9 @@ class DeepLearningModel(AbstractModel):
         input_layer_size = self._input_count
         output_layer_size = self._output_count
 
-        ##### parse the arguments so they can be used in the network
+        # parse the arguments so they can be used in the network
 
-        ### layers
+        # layers
         hidden_layers = []
         if hidden_layers_requested == "smooth":
             # create a list of hidden layer sizes, always layer i's size being the (i-1) layer's size divide by 2,
@@ -338,8 +407,9 @@ class DeepLearningModel(AbstractModel):
                     layer_size = -layer_size
                 hidden_layers.append(layer_size)
             pass
+        self._layers = [self._input_count] + hidden_layers + [self._output_count]
 
-        ### activations
+        # activations
         if type(activation_requested) not in [str, list]:
             warnings.warn(
                 "DeepLearningModel: provided activation {} not understood; using {} as default activation."
@@ -368,18 +438,20 @@ class DeepLearningModel(AbstractModel):
                             "Not able to use activation function {}".format(activation_requested))
                 activations = activation_requested + [activation_requested[-1]] * (
                         len(hidden_layers) + 1 - len(activation_requested))
+        self._activations = activations
 
-        ### dropout
-        if type(dropout_requested) not in [float, list]:
+        # dropout
+        if type(dropout_requested) not in [float, list, int]:
             warnings.warn(
-                "DeepLearningModel: provided dropout type not understood; using {} as default dropout."
-                    .format(self.DEFAULT_DROPOUT), RuntimeWarning)
+                "DeepLearningModel: provided dropout type {} not understood; using {} as default dropout."
+                    .format(type(dropout_requested), self.DEFAULT_DROPOUT), RuntimeWarning)
             dropout_requested = self.DEFAULT_DROPOUT
 
-        if type(dropout_requested) is float:
+        if type(dropout_requested) in [float, int]:
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
             dropouts = dropout_requested[:(len(hidden_layers))]
+        self._dropouts = dropouts
 
         # create the network class
         class Network(nn.Module):
@@ -454,7 +526,7 @@ class DeepLearningModel(AbstractModel):
             Returns the model type; in this case -> DEEP_LEARNING_MODEL
         :return:
         """
-        return MODEL_TYPE
+        return DEEP_LEARNING_MODEL
 
     def to_dict(self) -> dict:
         """
@@ -475,7 +547,11 @@ class DeepLearningModel(AbstractModel):
                 "INPUT_COUNT": self._input_count,
                 "OUTPUT_COUNT": self._output_count,
                 "TASK": self._task,
-                "CLASSIFICATION_MAPPING": self._classification_mapping
+                "CLASSIFICATION_MAPPING": self._classification_mapping,
+                "CONFIGURED": self._configured,
+                "LAYERS": self._layers,
+                "ACTIVATIONS": self._activations,
+                "DROPOUTS": self._dropouts
             }
         }
 
@@ -505,6 +581,10 @@ class DeepLearningModel(AbstractModel):
         self._output_count = data.get("OUTPUT_COUNT")
         self._task = data.get("TASK")
         self._classification_mapping = data.get("CLASSIFICATION_MAPPING")
+        self._configured = data.get("CONFIGURED")
+        self._layers = data.get("LAYERS")
+        self._activations = data.get("ACTIVATIONS")
+        self._dropouts = data.get("DROPOUTS")
 
         # init the model
         self._model = self.create_model()
@@ -515,3 +595,16 @@ class DeepLearningModel(AbstractModel):
 
         self._train_mode = False
         self._model.eval()
+
+    def _description_string(self) -> str:
+        if self._configured is False:
+            return "NeuralNetwork - Not configured"
+        else:
+            return "NeuralNetwork - Layers: {layers} | Activations: {activations} | Dropouts: {dropouts}".format(
+                layers=self._layers,
+                activations=self._activations,
+                dropouts=self._dropouts
+            )
+
+    def get_config(self) -> dict:
+        return self._config

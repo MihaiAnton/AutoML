@@ -3,7 +3,7 @@
 from Pipeline import Pipeline, Splitter
 from pandas import read_csv
 
-data = read_csv("Datasets/container_problem.csv")
+data = read_csv("../Datasets/container_problem.csv")
 
 pipeline = Pipeline()
 

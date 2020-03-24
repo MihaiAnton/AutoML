@@ -1,3 +1,5 @@
+import warnings
+
 from ..Mapper import Mapper
 from pandas import DataFrame
 from .Models import AbstractModel
@@ -40,7 +42,15 @@ class Learner:
         :return: learnt model and statistics
         """
         # parameter validation
-        # TODO
+        if type(input_size) is int:
+            if input_size != X.shape[1]:
+                warnings.warn("Learner: input_size does not match the actual size of X.", RuntimeWarning)
+                input_size = X.shape[1]
+
+        if type(output_size) is int:
+            if output_size != Y.shape[1]:
+                warnings.warn("Learner: output_size does not match the actual size of Y.", RuntimeWarning)
+                output_size = Y.shape[1]
 
         # input and output size
         if input_size is None:

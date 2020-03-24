@@ -9,3 +9,4 @@ into a unified interface(AbstractModel)
 from .model_loader import load_model
 from .abstractModel import AbstractModel
 from .modelFactory import ModelFactory
+from .modelTypes import *

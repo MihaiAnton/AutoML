@@ -36,18 +36,19 @@ exit(0)
 # Pipeline example 4: train a default model using the pipeline
 
 
-data = read_csv("Datasets/titanic_converted.csv")
+data = read_csv("Datasets/titanic.csv")
 
 pipeline = Pipeline()  # create a pipeline
-model = pipeline.learn(data)  # learn from the data
+model = pipeline.fit(data)  # learn from the data
+print(model.model_type())
 model.save("tmp_files/model")
 
 
-del pipeline
 
 model = load_model("tmp_files/model")
+print(model.model_type())
 
-X, Y = Splitter.XYsplit(data, "Survived")
+X, Y = Splitter.XYsplit(pipeline.convert(data), "Survived")
 pred = model.predict(X)
 
 

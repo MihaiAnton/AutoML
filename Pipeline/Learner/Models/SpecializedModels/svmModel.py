@@ -6,7 +6,7 @@ from random import randint, randrange
 import warnings
 
 from ..abstractModel import AbstractModel
-from .modelTypes import SVM_MODEL
+from ..modelTypes import SVM_MODEL
 from ..constants import REGRESSION, CLASSIFICATION, AVAILABLE_TASKS
 from ....Exceptions import SvmModelException
 
@@ -32,22 +32,30 @@ class SvmModel(AbstractModel):
         # model metadata
         self._task = task
         self._config = config
+        if config is None:
+            self._config = {}
         self._predicted_name = predicted_name
 
         # actual model
         self._model = None
 
+        # print data
+        self._configured = False
+        self._kernel = None
+        self._regularization = None
+
     # noinspection DuplicatedCode
-    def train(self, X: DataFrame, Y: DataFrame, time: int = 600, callbacks: list = None,
-              validation_split: float = 0.2) -> 'AbstractModel':
+    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
+              validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
-                Trains the model with the data provided.
-            :param validation_split: how much from the data(as percentage) should be used as validation
-            :param callbacks: a list of predefined callbacks that get called at every epoch
-            :param time: time of the training session in seconds: default 10 minutes
-            :param X: the independent variables in form of Pandas DataFrame
-            :param Y: the dependents(predicted) values in form of Pandas DataFrame
-            :return: the model
+            Trains the model with the data provided.
+        :param validation_split: how much from the data(as percentage) should be used as validation
+        :param callbacks: a list of predefined callbacks that get called at every epoch
+        :param train_time: time of the training session in seconds: default 10 minutes
+        :param X: the independent variables in form of Pandas DataFrame
+        :param Y: the dependents(predicted) values in form of Pandas DataFrame
+        :param verbose: decides whether or not the model prints intermediary outputs
+        :return: the model
         """
 
         if self._predicted_name is None:
@@ -60,7 +68,7 @@ class SvmModel(AbstractModel):
             x_train = X.to_numpy()
             y_train = Y.to_numpy()
 
-            print("Training on {} samples...".format(len(y_train)))
+            print("Training on {} samples...".format(len(y_train))) if verbose else None
         else:
 
             if type(validation_split) != float:
@@ -73,12 +81,16 @@ class SvmModel(AbstractModel):
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))
 
-            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val)))
+            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val))) if verbose else None
 
         # no time tracking for this model type, since SVM's are trained only once
         # train the model
         if self._model is None:
             self._model = self._get_model()
+            self._configured = True
+            self._kernel = self._model.kernel
+            self._regularization = self._model.C
+
         self._model.fit(x_train, y_train.ravel())
 
         if self._task == CLASSIFICATION:
@@ -91,10 +103,10 @@ class SvmModel(AbstractModel):
             criterion_val = self._model.score(x_val, y_val)
 
             print("Training finished - Training {}: {} - Validation {}: {}"
-                  .format(loss_name, criterion_train, loss_name, criterion_val))
+                  .format(loss_name, criterion_train, loss_name, criterion_val)) if verbose else None
         else:
             criterion_train = self._model.score(x_train, y_train)
-            print("Training finished - Training {}: {}".format(loss_name, criterion_train))
+            print("Training finished - Training {}: {}".format(loss_name, criterion_train)) if verbose else None
 
     def predict(self, X: DataFrame) -> DataFrame:
         """
@@ -133,7 +145,10 @@ class SvmModel(AbstractModel):
             "METADATA": {
                 "PREDICTED_NAME": self._predicted_name,
                 "CONFIG": self._config,
-                "TASK": self._task
+                "TASK": self._task,
+                "CONFIGURED": self._configured,
+                "KERNEL": self._kernel,
+                "REGULARIZATION": self._regularization
             }
         }
 
@@ -158,6 +173,9 @@ class SvmModel(AbstractModel):
         self._predicted_name = mdata.get("PREDICTED_NAME")
         self._config = mdata.get("CONFIG")
         self._task = mdata.get("TASK")
+        self._configured = mdata.get("CONFIGURED")
+        self._kernel = mdata.get("KERNEL")
+        self._regularization = mdata.get("REGULARIZATION")
 
         # init the model
         self._model = pickle.loads(model)
@@ -203,3 +221,17 @@ class SvmModel(AbstractModel):
             tol=1e-6,
             cache_size=300
         )
+
+    def _description_string(self) -> str:
+        if self._configured is False:
+            return "SVM - Not Configured"
+        else:
+            task = "Classifier" if self._task == CLASSIFICATION else "Regression"
+            return "SVM {task} - Kernel: {kernel} | Regularization: {reg}".format(
+                task=task,
+                kernel=self._kernel,
+                reg=self._regularization
+            )
+
+    def get_config(self) -> dict:
+        return self._config

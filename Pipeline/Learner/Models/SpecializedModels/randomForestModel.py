@@ -9,7 +9,7 @@ import pickle
 
 from ....Exceptions import RandomForestModelException
 from ..abstractModel import AbstractModel
-from .modelTypes import RANDOM_FOREST_MODEL
+from ..modelTypes import RANDOM_FOREST_MODEL
 from ..constants import CLASSIFICATION, REGRESSION, AVAILABLE_TASKS
 
 
@@ -27,6 +27,7 @@ class RandomForestModel(AbstractModel):
         :param predicted_name: the name of the the predicted column
         :param dictionary:
         """
+
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
@@ -34,6 +35,8 @@ class RandomForestModel(AbstractModel):
         # model metadata
         self._task = task
         self._config = config
+        if config is None:
+            self._config = {}
         self._predicted_name = predicted_name
         self._criterion = ""
 
@@ -41,17 +44,23 @@ class RandomForestModel(AbstractModel):
         self._model = None
         self._model_score = None
 
+        # print data
+        self._configured = None
+        self._n_estimators = None
+        self._criterion = None
+
     # noinspection DuplicatedCode
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
-              validation_split: float = 0.2) -> 'AbstractModel':
+              validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
-                Trains the model with the data provided.
-            :param validation_split: how much from the data(as percentage) should be used as validation
-            :param callbacks: a list of predefined callbacks that get called at every epoch
-            :param train_time: time of the training session in seconds: default 10 minutes
-            :param X: the independent variables in form of Pandas DataFrame
-            :param Y: the dependents(predicted) values in form of Pandas DataFrame
-            :return: the model
+            Trains the model with the data provided.
+        :param validation_split: how much from the data(as percentage) should be used as validation
+        :param callbacks: a list of predefined callbacks that get called at every epoch
+        :param train_time: time of the training session in seconds: default 10 minutes
+        :param X: the independent variables in form of Pandas DataFrame
+        :param Y: the dependents(predicted) values in form of Pandas DataFrame
+        :param verbose: decides whether or not the model prints intermediary outputs
+        :return: the model
         """
         # check once more the predicted names
         if self._predicted_name is None:
@@ -65,20 +74,20 @@ class RandomForestModel(AbstractModel):
             x_train = X.to_numpy()
             y_train = Y.to_numpy()
 
-            print("Training on {} samples...".format(len(y_train)))
+            print("Training on {} samples...".format(len(y_train))) if verbose else None
         else:
 
             if type(validation_split) != float:
                 raise RandomForestModelException("Parameter validation_split should be None or float in range [0,1)")
             if validation_split < 0 or validation_split >= 1:
                 validation_split = 0.2
-                warnings.warn("RandomForestModel: configured validation percentage is out of bounds; using default value 0.2",
-                              RuntimeWarning)
+                warnings.warn("RandomForestModel: configured validation percentage is out of bounds; using default "
+                              "value 0.2", RuntimeWarning)
 
             x_train, x_val, y_train, y_val = train_test_split(X.to_numpy(), Y.to_numpy(), test_size=validation_split,
                                                               random_state=randrange(2048))
 
-            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val)))
+            print("Training on {} samples. Validating on {}...".format(len(y_train), len(y_val))) if verbose else None
 
         # prepare for time handling
         seconds_count = 0
@@ -112,6 +121,11 @@ class RandomForestModel(AbstractModel):
                     self._task == REGRESSION and (self._model_score is None or self._model_score > criterion):
                 self._model_score = criterion
                 self._model = model
+
+                # data for printing
+                self._configured = True
+                self._n_estimators = self._model.n_estimators
+                self._criterion = self._model.criterion
 
             epoch_end = time.time()
             epoch_duration = epoch_end - epoch_start
@@ -157,12 +171,12 @@ class RandomForestModel(AbstractModel):
 
                     print("Epoch {} - Training {}: {} - Validation {}: {} - ETA: {}{}:{}:{}"
                           .format(epochs, loss_name, criterion_train, loss_name, criterion_val,
-                                  day, hour, minute, second))
+                                  day, hour, minute, second)) if verbose else None
                 else:
                     criterion_train = self._model.score(x_train, y_train)
-                    print("Epoch {} - Training {}: {} - ETA: {}{}:{}:{}".format(epochs, loss_name,
-                                                                                criterion_train,
-                                                                                day, hour, minute, second))
+                    print("Epoch {} - Training {}: {} - ETA: {}{}:{}:{}".format(epochs, loss_name, criterion_train,
+                                                                                day, hour, minute,
+                                                                                second)) if verbose else None
 
     def predict(self, X: DataFrame) -> DataFrame:
         """
@@ -262,7 +276,10 @@ class RandomForestModel(AbstractModel):
             "METADATA": {
                 "PREDICTED_NAME": self._predicted_name,
                 "CONFIG": self._config,
-                "TASK": self._task
+                "TASK": self._task,
+                "CONFIGURED": self._configured,
+                "N_ESTIM": self._n_estimators,
+                "CRITERION": self._criterion
             }
         }
 
@@ -287,6 +304,23 @@ class RandomForestModel(AbstractModel):
         self._predicted_name = mdata.get("PREDICTED_NAME")
         self._config = mdata.get("CONFIG")
         self._task = mdata.get("TASK")
+        self._configured = mdata.get("CONFIGURED")
+        self._n_estimators = mdata.get("N_ESTIM")
+        self._criterion = mdata.get("CRITERION")
 
         # init the model
         self._model = pickle.loads(model)
+
+    def _description_string(self) -> str:
+        if self._configured is False:
+            return "Random Forest - Not configured"
+        else:
+            task = "Classifier" if self._task == CLASSIFICATION else "Regression"
+            return "Random Forest {task} - Estimators: {estimators} | Criterion: {criterion}".format(
+                task=task,
+                estimators=self._n_estimators,
+                criterion=self._criterion
+            )
+
+    def get_config(self) -> dict:
+        return self._config
