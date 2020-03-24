@@ -83,7 +83,7 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     if random() < 0.5:
         dropout = uniform(*config.get("DROPOUT_RANGE", [0, 0.6]))
     else:
-        desired_len = 2
+        desired_len = 6
         if type(layers) is list:
             desired_len = len(layers)
 

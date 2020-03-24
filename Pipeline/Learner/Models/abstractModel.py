@@ -96,10 +96,6 @@ class AbstractModel(ABC):
                 y_pred = pred.to_numpy()
                 score = scorer(y_true, y_pred)
 
-                # TODO remove this; debugging purposes only
-                if score is None:
-                    print(1)
-
                 return 1 - score
                 # there a higher score is better, but the goal is minimization, this is why it is used 1/score
             else:

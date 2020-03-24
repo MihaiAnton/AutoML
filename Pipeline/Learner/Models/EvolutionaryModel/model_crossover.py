@@ -19,9 +19,6 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
     :param model2: deep learning model
     :return: deep learning model
     """
-
-    # TODO add a better method than just random selection between parents
-
     config1 = model1.get_config()
     config2 = model2.get_config()
     XO_PROBAB = 0.6  # the probability that the parents are combined rather than choosing attributes from only one

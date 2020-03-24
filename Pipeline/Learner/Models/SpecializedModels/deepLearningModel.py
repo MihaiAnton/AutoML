@@ -121,16 +121,12 @@ class DeepLearningModel(AbstractModel):
 
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
         df.fillna(0, inplace=True)  # TODO find better alternative
+                                    # was added just in case a value is nan
 
         if self._task == CLASSIFICATION:
             mapping = self._classification_mapping["mapping"]
-            try:
-                df_mapped = self._from_categorical(df, mapping)
-            except KeyError:
-                print(mapping)  # TODO remove later
-                print(9)
+            df_mapped = self._from_categorical(df, mapping)
             df = df_mapped
-        # check if the model is set for categorical purpose
 
         return df
 

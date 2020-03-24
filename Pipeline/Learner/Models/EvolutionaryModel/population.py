@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from random import choice
+from random import choices
 
 from ..abstractModel import AbstractModel
 from .chromosome import Chromosome
@@ -135,8 +135,13 @@ class Population:
             Selects a model from the population
         :return: the selected model
         """
-        # FIXME find a better method than just random selection
-        return choice(self._population)
+        # each chromosome has a fitness, and the lower the fitness, the higher the probability of election
+        choices_list = list(range(len(self._population)))
+        weights = [1/chromosome.get_fitness() for chromosome in self._population]
+
+        index = choices(choices_list, weights=weights)[0]
+
+        return self._population[index]
 
     def XO(self, chromosome1: Chromosome, chromosome2: Chromosome) -> Chromosome:
         """
