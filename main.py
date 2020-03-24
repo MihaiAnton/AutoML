@@ -4,7 +4,7 @@ from Pipeline import Splitter
 
 print("Start AutoML")
 
-####################### Pipeline example 1: processing data
+# Pipeline example 1: processing data
 
 
 data = read_csv("Datasets/titanic.csv")  # read the raw data
@@ -15,14 +15,14 @@ result = pipeline.process(data)  # process the data (the mappings will be stored
 pipeline.save("tmp_files/pipeline_titanic.bin")  # save the pipeline data
 result.to_csv("Datasets/titanic_proc.csv", index=False)  # write the processed data frame to the csv
 
-####################### Pipeline example 2: converting data
+# Pipeline example 2: converting data
 
 pipeline = load_pipeline("tmp_files/pipeline_titanic.bin")  # load a pipeline previously saved
 data = read_csv("Datasets/titanic_test.csv")  # read the data frame that needs to be converted
 result = pipeline.convert(data)  # convert the data
 result.to_csv("Datasets/titanic_converted.csv", index=False)  # save the conversion to file
 exit(0)
-####################### Pipeline example 3: train default model by using the model class
+# Pipeline example 3: train default model by using the model class
 # from Pipeline.Learner.Models.SpecializedModels.deepLearningModel import DeepLearningModel
 # from Pipeline.DataProcessor.DataSplitting.splitter import Splitter
 #
@@ -33,7 +33,7 @@ exit(0)
 # model.train(X, Y, 10)
 # pred = model.predict(X)
 # print(1)
-####################### Pipeline example 4: train a default model using the pipeline
+# Pipeline example 4: train a default model using the pipeline
 
 
 data = read_csv("Datasets/titanic_converted.csv")
