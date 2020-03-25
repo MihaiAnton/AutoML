@@ -42,6 +42,7 @@ class AbstractModel(ABC):
         self._discarded_column_names = []
         self._discarded_data = None
 
+
     def _discard_columns(self, X: DataFrame, columns: list = None, caching: bool = False) -> DataFrame:
         """
             Removes the columns marked explicitly to be removed in columns
@@ -91,6 +92,10 @@ class AbstractModel(ABC):
         :param verbose: decides whether or not the model prints intermediary outputs
         :return: the model
         """
+        # always sort the columns in alphabetical order, as a rule for both train and predict
+        columns = list(X.columns)
+        columns.sort()
+        X = X[columns]
 
         # train the actual model
         return self._model_train(X, Y, train_time, validation_split, callbacks, verbose)
@@ -122,6 +127,9 @@ class AbstractModel(ABC):
         X = self._discard_columns(X, discard_columns, caching=True)
 
         # get the prediction
+        columns = list(X.columns)
+        columns.sort()
+        X = X[columns]
         prediction = self._model_predict(X)
 
         # append the removed columns
@@ -197,7 +205,6 @@ class AbstractModel(ABC):
         :param file: the name of the file or the absolute path to it
         :return: self for chaining purposes
         """
-        import json
         with open(file, 'wb') as f:
             data = self.to_dict()
             pickle.dump(data, f)
