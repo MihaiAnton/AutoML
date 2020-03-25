@@ -57,13 +57,14 @@ class Engineer:
         not_processed = []
 
         for column in data.columns:
-            print("Engineer: process column {}.".format(column)) if verbose else None
+
             dtype = data_types[column]
 
             if column in self._config.get("DO_NOT_PROCESS", []):
                 interm_data = data[[column]]
                 not_processed.append(column)
             else:
+                print("Engineer: process column {}.".format(column)) if verbose else None
                 if str(dtype) in self._numeric_dtypes:
                     col_type = column_type.get(column, 'undefined')
                     interm_data = self._process_numeric(data.loc[:, [column]], column, col_type)
@@ -401,11 +402,12 @@ class Engineer:
         processed_data = DataFrame()
 
         for column in data.columns:
-            print("Engineer: convert column {}.".format(column)) if verbose else None
+
             interm_data = None
             if column in mapper.get("NOT_PROCESSED", []):
                 interm_data = data[[column]]
             else:
+                print("Engineer: convert column {}.".format(column)) if verbose else None
                 column_data = mapper.get(column, None)
                 if column_data is None:
                     raise DataEngineeringException(

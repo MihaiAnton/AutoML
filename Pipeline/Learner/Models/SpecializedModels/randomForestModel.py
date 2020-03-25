@@ -27,6 +27,7 @@ class RandomForestModel(AbstractModel):
         :param predicted_name: the name of the the predicted column
         :param dictionary:
         """
+        AbstractModel.__init__(self)
 
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
@@ -50,8 +51,8 @@ class RandomForestModel(AbstractModel):
         self._criterion = None
 
     # noinspection DuplicatedCode
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
-              validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
+                     validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
             Trains the model with the data provided.
         :param validation_split: how much from the data(as percentage) should be used as validation
@@ -178,7 +179,7 @@ class RandomForestModel(AbstractModel):
                                                                                 day, hour, minute,
                                                                                 second)) if verbose else None
 
-    def predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame) -> DataFrame:
         """
                 Predicts the output of X based on previous learning
             :param X: DataFrame; the X values to be predicted into some Y Value

@@ -22,7 +22,7 @@
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
       "PROCESS_CATEGORICAL_PREDICTED_COLUMN": false,
-      "DO_NOT_PROCESS": ["PassengerId"],
+      "DO_NOT_PROCESS": [],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
 
@@ -57,9 +57,9 @@
 
   "TRAINING": true,
   "TRAINING_CONFIG": {
-    "TYPE": "evolutionary",
+    "TYPE": "default",
     "TASK": "classification",
-    "TIME": "20m",
+    "TIME": "10s",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "svm",

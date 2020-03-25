@@ -74,6 +74,8 @@ class DeepLearningModel(AbstractModel):
             :param config: the configuration map (expected to get the NEURAL_NETWORK_CONFIG part of the default model)
             :param task: the type of learning that is wanted to be done
         """
+        AbstractModel.__init__(self)
+
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
@@ -104,7 +106,7 @@ class DeepLearningModel(AbstractModel):
         # training metrics useful for evaluation
         self._epoch_loss_train = []  # for each epoch the loss is collected in this array
 
-    def predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame) -> DataFrame:
         """
             Predicts a set of data transformed to fit to the model's input expectation
         :param X: dataset to predict
@@ -125,7 +127,7 @@ class DeepLearningModel(AbstractModel):
         del numpy_array
 
         df.fillna(0, inplace=True)  # TODO find better alternative
-                                    # was added just in case a value is nan
+        # was added just in case a value is nan
 
         if self._task == CLASSIFICATION:
             mapping = self._classification_mapping["mapping"]
@@ -135,8 +137,8 @@ class DeepLearningModel(AbstractModel):
         return df
 
     # noinspection DuplicatedCode
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
-              callbacks: list = None, verbose: bool = True):
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
+                     callbacks: list = None, verbose: bool = True):
         """
             Trains the model according to the specifications provided.
         :param callbacks: a list of predefined callbacks that get called at every epoch
@@ -347,15 +349,15 @@ class DeepLearningModel(AbstractModel):
         base_loss = AbstractModel.eval(self, X, Y, task, metric)
         final_loss = base_loss
 
-        loss_diff = [self._epoch_loss_train[i-1] - self._epoch_loss_train[i]
-                     for i in range(len(self._epoch_loss_train)-1)]
+        loss_diff = [self._epoch_loss_train[i - 1] - self._epoch_loss_train[i]
+                     for i in range(len(self._epoch_loss_train) - 1)]
 
         # based on the list of losses per epoch, consider the following metrics
         # overall drop in loss - from the first epoch to the last
-        drop = self._epoch_loss_train[0] - self._epoch_loss_train[-1]   # the higher the drop the better
+        drop = self._epoch_loss_train[0] - self._epoch_loss_train[-1]  # the higher the drop the better
         if drop == 0:
             drop = 0.1
-        final_loss += base_loss * abs((1/drop))                         # the lower the drop, the more the loss will increase
+        final_loss += base_loss * abs((1 / drop))  # the lower the drop, the more the loss will increase
 
         # of all consecutive epoch pairs, how many, as percentage, had positive loss change
         positive_drops = 0
@@ -363,7 +365,7 @@ class DeepLearningModel(AbstractModel):
             if diff > 0:
                 positive_drops += 1
 
-        final_loss += base_loss * (positive_drops/len(loss_diff))
+        final_loss += base_loss * (positive_drops / len(loss_diff))
 
         # compute the standard deviation of loss changes: the lower the better
         # (we want a steady decrease rather than a stepped one)

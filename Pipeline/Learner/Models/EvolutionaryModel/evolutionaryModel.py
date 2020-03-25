@@ -26,6 +26,8 @@ class EvolutionaryModel(AbstractModel):
         :param task: the task to be done (REGRESSION / CLASSIFICATION)
         :param predicted_name: the name of the attribute to be predicted to be predicted
         """
+        AbstractModel.__init__(self)
+
         if config is None:
             config = {}
 
@@ -68,7 +70,7 @@ class EvolutionaryModel(AbstractModel):
         population = Population(in_size, out_size, task, population_size, config)
         return population
 
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
               validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
                 Trains the model with the data provided.
@@ -158,7 +160,7 @@ class EvolutionaryModel(AbstractModel):
         # return the trained best model
         return self._model
 
-    def predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame) -> DataFrame:
         """
                 Predicts the output of X based on previous learning
             :param X: DataFrame; the X values to be predicted into some Y Value

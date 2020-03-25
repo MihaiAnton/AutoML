@@ -1,6 +1,6 @@
 import pickle
 from abc import ABC, abstractmethod
-from pandas import DataFrame
+from pandas import DataFrame, concat
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, \
     mean_absolute_error, mean_squared_error, mean_squared_log_error
 
@@ -35,11 +35,54 @@ class AbstractModel(ABC):
         "mean_squared_log_error": mean_squared_log_error
     }
 
-    @abstractmethod
+    def __init__(self):
+        """
+            Initializes an abstract model
+        """
+        self._discarded_column_names = []
+        self._discarded_data = None
+
+    def _discard_columns(self, X: DataFrame, columns: list = None, caching: bool = False) -> DataFrame:
+        """
+            Removes the columns marked explicitly to be removed in columns
+            If caching is enabled, the removed columns are saved to the class so they can be appended
+        later; useful in case of prediction
+        :param X: the data to be passed to the model
+        :param columns: list of columns to be removed
+        :param caching: decides if the removed columns are saved to be later used
+        :return: X without the marked columns
+        """
+        if columns is None:
+            return X
+
+        to_discard_valid = []
+        for col in columns:
+            if col in X.columns:
+                to_discard_valid.append(col)
+
+        if caching:
+            self._discarded_data = X.loc[:, to_discard_valid]
+
+        return X.drop(to_discard_valid, axis=1)
+
+    def _append_discarded_columns(self, X: DataFrame) -> DataFrame:
+        """
+            Append the previously cached columns to the dataset X
+        :param X: data frame to have data appended to
+        :return: the merged data frame
+        """
+        if self._discarded_data is None:
+            return X
+
+        merged_data = concat([self._discarded_data, X], axis=1)
+        self._discarded_data = None  # so memory is freed
+        return merged_data
+
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
-              callbacks: list = None, verbose: bool = True) -> 'AbstractModel':
+              callbacks: list = None, verbose: bool = True):
         """
             Trains the model with the data provided.
+
         :param validation_split: percentage of the data to be used in validation; None if validation should not be used
         :param callbacks: a list of predefined callbacks that get called at every epoch
         :param train_time: time of the training session in seconds: default 10 minutes
@@ -49,10 +92,48 @@ class AbstractModel(ABC):
         :return: the model
         """
 
+        # train the actual model
+        return self._model_train(X, Y, train_time, validation_split, callbacks, verbose)
+
     @abstractmethod
-    def predict(self, X: DataFrame) -> DataFrame:
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
+                     callbacks: list = None, verbose: bool = True) -> 'AbstractModel':
+        """
+            Trains the specific model with the data given. To be implemented in each child class.
+        :param validation_split: percentage of the data to be used in validation; None if validation should not be used
+        :param callbacks: a list of predefined callbacks that get called at every epoch
+        :param train_time: time of the training session in seconds: default 10 minutes
+        :param X: the independent variables in form of Pandas DataFrame
+        :param Y: the dependents(predicted) values in form of Pandas DataFrame
+        :param verbose: decides whether or not the model prints intermediary outputs
+        :return: the model
+        """
+
+    def predict(self, X: DataFrame, discard_columns: list = None) -> DataFrame:
         """
             Predicts the output of X based on previous learning
+
+        :param X: DataFrame; the X values to be predicted into some Y Value
+        :param discard_columns: the list of column names to discard from the actual prediction
+                            if not provided, the discarded columns used in training are used now
+        :return: DataFrame with the predicted data
+        """
+        # remove columns if necessary
+        X = self._discard_columns(X, discard_columns, caching=True)
+
+        # get the prediction
+        prediction = self._model_predict(X)
+
+        # append the removed columns
+        prediction = self._append_discarded_columns(prediction)
+
+        # return the result
+        return prediction
+
+    @abstractmethod
+    def _model_predict(self, X: DataFrame) -> DataFrame:
+        """
+            Predicts the output of X based on previous learning. To be implemented in child classes
         :param X: DataFrame; the X values to be predicted into some Y Value
         :return: DataFrame with the predicted data
         """

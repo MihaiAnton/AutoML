@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from pandas import DataFrame
+from pandas import DataFrame, concat
 
 from Pipeline.Mapper import Mapper
 from Pipeline.DataProcessor.processor import Processor
@@ -199,7 +199,7 @@ class Pipeline:
         # 2. Model learning
         if self._config.get("TRAINING", False):
             x, y = Splitter.XYsplit(data, y_column)
-            self._mapper.set("X_COLUMNS_TRAIN", list(data.columns))
+            self._mapper.set("X_COLUMNS_TRAIN", list(x.columns))
 
             result = self._learner.learn(X=x, Y=y, verbose=verbose)
 
@@ -209,9 +209,38 @@ class Pipeline:
         self._mapper.set(self.STATE_MACRO, self.LEARNT_STATE)
         return result
 
-    def predict(self, data: DataFrame, verbose: bool = False) -> DataFrame:
+    def _copy_columns(self, X: DataFrame, columns: list = None) -> DataFrame:
+        """
+            Makes a copy of the columns marked in columns and returns it
+
+        :param X: the data to be passed to the model
+        :param columns: list of columns to be discarded
+        :return: X without the marked columns
+        """
+        if columns is None:
+            return X
+
+        to_discard_valid = []
+        for col in columns:
+            if col in X.columns:
+                to_discard_valid.append(col)
+
+        return X.loc[:, to_discard_valid]
+
+    def _append_discarded_columns(self, X: DataFrame, columns: DataFrame) -> DataFrame:
+        """
+            Append the previously cached columns to the dataset X
+        :param X: data frame to have data appended to
+        :return: the merged data frame
+        """
+        merged_data = concat([columns, X], axis=1)
+        return merged_data
+
+    def predict(self, data: DataFrame, verbose: bool = False, discard_columns: list = None) -> DataFrame:
         """
             Predicts the output of the data using a previously learnt module.
+        :param discard_columns: list with columns names that will be copied from the data frame and
+                                    appended to the prediction
         :param verbose: decide is the predict method should output information to the console
         :param data: DataFrame with the x values to be predicted
         :return: DataFrame with the predicted values
@@ -219,6 +248,11 @@ class Pipeline:
         """
         if self._model is None:
             raise PipelineException("Could not predict unless a training has been previously done.")
+
+        if discard_columns is None:
+            discard_columns = []
+
+        discarded_data = self._copy_columns(data, discard_columns)
 
         columns = list(data.columns)
         columns.sort()
@@ -228,19 +262,17 @@ class Pipeline:
 
         if columns == learnt_columns:  # the columns to predicts are the learnt columns
             self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
-            return self._model.predict(data)
+            prediction = self._model.predict(data)
+            return self._append_discarded_columns(prediction, discarded_data)
 
         elif self._mapper.get("CONVERSION_DONE", False):  # the columns differ (maybe conversion has to be done)
             processed_cols = self._mapper.get("X_COLUMNS_PROCESS", [])
             processed_cols.sort()
 
-            if columns == processed_cols:
-                converted = self.convert(data)
-                return self.predict(converted)
-
-            else:
-                raise PipelineException("Expected conversion from columns {}; received {}"
-                                        .format(self._mapper.get("X_COLUMNS_PROCESS", []), list(data.columns)))
+            converted = self.convert(data)
+            self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
+            prediction = self._model.predict(converted)
+            return self._append_discarded_columns(prediction, discarded_data)
 
         else:
             raise PipelineException("Expected model with columns {}; received {}"
