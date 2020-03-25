@@ -71,7 +71,8 @@
       "MOMENTUM": 0.9,
       "HIDDEN_LAYERS": "smooth",
       "ACTIVATIONS": "sigmoid",
-      "DROPOUT": 0.2
+      "DROPOUT": 0.2,
+      "BATCH_SIZE": 64
     },
 
     "RANDOM_FOREST_CONFIG": {
@@ -113,10 +114,10 @@
         "MOMENTUM_RANGE": [0,1],
         "HIDDEN_LAYERS_CHOICES": ["smooth",[10,32,8]],
         "ACTIVATION_CHOICES": ["sigmoid","relu","linear"],
-        "DROPOUT_RANGE": [0,1]
+        "DROPOUT_RANGE": [0,1],
+        "BATCH_SIZE_RANGE": [1,128]
       }
     }
-
   }
 }
 

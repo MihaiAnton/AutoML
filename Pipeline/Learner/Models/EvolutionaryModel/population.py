@@ -213,6 +213,13 @@ class Population:
         """
         return create_random_model(input_size, output_size, config, task)
 
+    def get_chromosomes(self) -> list:
+        """
+            Returns all the models in the population
+        :return: list of Chromosomes
+        """
+        return [chromosome for chromosome in self._population]
+
     @staticmethod
     def _is_fitter(actual_fitness: float, best_fitness: float) -> bool:
         """

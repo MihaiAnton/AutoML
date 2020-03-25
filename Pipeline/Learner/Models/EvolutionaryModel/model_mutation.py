@@ -45,7 +45,8 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
     activations = config.get("ACTIVATIONS")
     if type(activations) is list:
         position = randrange(0, len(activations))
-        activations[position] = choice(choice_config.get("ACTIVATION_CHOICES", []))
+        if position != len(activations)-1:
+            activations[position] = choice(choice_config.get("ACTIVATION_CHOICES", []))
 
     # dropout
     dropout = config.get("DROPOUT")
@@ -54,6 +55,9 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
         dropout = max(0.00001, momentum)  # just be sure it does not get negative
         dropout = min(momentum, 1)         # and no more than 1
 
+    # batch size
+    batch_size = int(config.get("BATCH_SIZE") + choice([-1, 1]) * 0.2 * random() * config.get("BATCH_SIZE"))
+
     offspring_config = {
         "CRITERION": config.get("CRITERION", "undefined"),
         "OPTIMIZER": config.get("OPTIMIZER"),
@@ -61,7 +65,8 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
         "MOMENTUM": momentum,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activations,
-        "DROPOUT": dropout
+        "DROPOUT": dropout,
+        "BATCH_SIZE": batch_size
     }
 
     return DeepLearningModel(in_size, out_size, task, offspring_config)

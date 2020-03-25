@@ -90,6 +90,7 @@ class AbstractModel(ABC):
         :param X: the independent variables in form of Pandas DataFrame
         :param Y: the dependents(predicted) values in form of Pandas DataFrame
         :param verbose: decides whether or not the model prints intermediary outputs
+        :raises AbstractModelException: on any actual model training error
         :return: the model
         """
         # always sort the columns in alphabetical order, as a rule for both train and predict
@@ -98,7 +99,10 @@ class AbstractModel(ABC):
         X = X[columns]
 
         # train the actual model
-        return self._model_train(X, Y, train_time, validation_split, callbacks, verbose)
+        try:
+            return self._model_train(X, Y, train_time, validation_split, callbacks, verbose)
+        except Exception as err:
+            raise AbstractModelException(err)
 
     @abstractmethod
     def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
@@ -121,6 +125,7 @@ class AbstractModel(ABC):
         :param X: DataFrame; the X values to be predicted into some Y Value
         :param discard_columns: the list of column names to discard from the actual prediction
                             if not provided, the discarded columns used in training are used now
+        :raises AbstractModelException: on any actual model prediction error
         :return: DataFrame with the predicted data
         """
         # remove columns if necessary
@@ -130,7 +135,10 @@ class AbstractModel(ABC):
         columns = list(X.columns)
         columns.sort()
         X = X[columns]
-        prediction = self._model_predict(X)
+        try:
+            prediction = self._model_predict(X)
+        except Exception as err:
+            raise AbstractModelException(err)
 
         # append the removed columns
         prediction = self._append_discarded_columns(prediction)
@@ -161,6 +169,7 @@ class AbstractModel(ABC):
         :param X: the input dataset
         :param Y: the dataset to compare the prediction to
         :param metric: the metric used
+        :raises AbstractModelException: on any actual model prediction error
         :return: the score
         """
         if task == REGRESSION:
@@ -203,12 +212,16 @@ class AbstractModel(ABC):
         """
             Saves the model to file
         :param file: the name of the file or the absolute path to it
+        :raises AbstractModelException: on any file saving error
         :return: self for chaining purposes
         """
-        with open(file, 'wb') as f:
-            data = self.to_dict()
-            pickle.dump(data, f)
-        return self
+        try:
+            with open(file, 'wb') as f:
+                data = self.to_dict()
+                pickle.dump(data, f)
+            return self
+        except Exception as err:
+            raise AbstractModelException(err)
 
     @abstractmethod
     def model_type(self) -> str:

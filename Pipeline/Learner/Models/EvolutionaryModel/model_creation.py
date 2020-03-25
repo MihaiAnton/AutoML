@@ -89,6 +89,9 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
 
         dropout = [uniform(*config.get("DROPOUT_RANGE", [0, 0.6])) for _ in range(desired_len)]
 
+    # batch size
+    batch_size = randint(*config.get("BATCH_SIZE_RANGE", [1, 128]))
+
     model_config = {
         "CRITERION": criterion,
         "OPTIMIZER": optimizer,
@@ -96,7 +99,8 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
         "MOMENTUM": momentum,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activation,
-        "DROPOUT": dropout
+        "DROPOUT": dropout,
+        "BATCH_SIZE": batch_size
     }
 
     # create the model with the previously created dictionary

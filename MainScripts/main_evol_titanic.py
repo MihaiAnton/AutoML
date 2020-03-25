@@ -16,7 +16,7 @@ config = {
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "classification",
-        "TIME": "4m",
+        "TIME": "20s",
         "PREDICTED_COLUMN_NAME": "Survived"
     }
 }
@@ -24,9 +24,11 @@ config = {
 pipeline = Pipeline(config=config)
 
 # fit the data to the pipeline
-model = pipeline.fit(data, verbose=False)
+model = pipeline.fit(data, verbose=True)
+summary = model.summary()
 
 # save the model for further reusage
+print(summary.get("BEST_MODEL"))
 model_save_file = "./models/titanic_evol_model"
 model.save(model_save_file)
 

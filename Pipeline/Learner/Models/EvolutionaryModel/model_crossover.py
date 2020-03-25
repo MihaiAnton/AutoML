@@ -89,6 +89,12 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
     else:
         dropout = choice([config1.get("DROPOUT"), config2.get("DROPOUT")])
 
+    # batch_size
+    if random() <= XO_PROBAB:
+        batch_size = int(.5 * (config1.get("BATCH_SIZE") + config2.get("BATCH_SIZE")))
+    else:
+        batch_size = choice([config1.get("BATCH_SIZE"), config2.get("BATCH_SIZE")])
+
     offspring_config = {
         "CRITERION": config1.get("CRITERION", "undefined"),
         "OPTIMIZER": optimizer,
@@ -96,7 +102,8 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
         "MOMENTUM": momentum,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activation,
-        "DROPOUT": dropout
+        "DROPOUT": dropout,
+        "BATCH_SIZE": batch_size
     }
 
     return DeepLearningModel(in_size, out_size, task, offspring_config)
