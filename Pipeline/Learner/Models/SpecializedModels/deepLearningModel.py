@@ -263,7 +263,7 @@ class DeepLearningModel(AbstractModel):
 
                 losses = []
                 for out in range(len(self._predicted_name)):
-                    losses.append(criterion(output[:, out], batch_y[:, out]))
+                        losses.append(criterion(output[:, out], batch_y[:, out]))
                 del output
 
                 loss = losses[0]
@@ -472,7 +472,9 @@ class DeepLearningModel(AbstractModel):
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
             dropouts = dropout_requested[:(len(hidden_layers))]
+            dropouts = dropouts + [0]*(len(hidden_layers)-len(dropouts))
         self._dropouts = dropouts
+
 
         # create the network class
         class Network(nn.Module):

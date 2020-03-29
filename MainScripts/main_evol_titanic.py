@@ -1,5 +1,6 @@
 # this script provides an example on how to use the pipeline with the evolutionary algorithms
 # the code is similar to the code used for the other approaches, but all the changes rely in the configuration file
+import json
 
 from pandas import read_csv
 from Pipeline import Pipeline
@@ -16,7 +17,7 @@ config = {
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "classification",
-        "TIME": "20s",
+        "TIME": "2m",
         "PREDICTED_COLUMN_NAME": "Survived"
     }
 }
@@ -26,7 +27,8 @@ pipeline = Pipeline(config=config)
 # fit the data to the pipeline
 model = pipeline.fit(data, verbose=True)
 summary = model.summary()
-
+with open('summary.json', 'w') as outfile:
+    json.dump(summary, outfile)
 # save the model for further reusage
 print(summary.get("BEST_MODEL"))
 model_save_file = "./models/titanic_evol_model"

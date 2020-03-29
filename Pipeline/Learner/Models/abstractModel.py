@@ -1,7 +1,7 @@
 import pickle
 from abc import ABC, abstractmethod
 from pandas import DataFrame, concat
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, \
+from sklearn.metrics import log_loss,\
     mean_absolute_error, mean_squared_error, mean_squared_log_error
 
 from .constants import CLASSIFICATION, REGRESSION
@@ -23,15 +23,17 @@ class AbstractModel(ABC):
         Behaviour:
             - calling an object ( model_instance(data) ), will return the prediction
     """
-    ACCEPTED_CLASSIFICATION_METRICS = ["accuracy", "balanced_accuracy"]
-    ACCEPTED_REGRESSION_METRICS = ["mean_absolute_error", "mean_squared_error", "mean_squared_log_error"]
+    ACCEPTED_CLASSIFICATION_METRICS = ["BCE", "CrossEntropy", "LogLikelihood"]
+    ACCEPTED_REGRESSION_METRICS = ["mean_absolute_error", "MSE", "mean_squared_log_error"]
 
     METRICS_TO_FUNCTION_MAP = {
-        "accuracy": accuracy_score,
-        "balanced_accuracy": balanced_accuracy_score,
+        "BCE": log_loss,
+        "CrossEntropy": log_loss,
+        "LogLikelihood": log_loss,
+        "PoissonLogLikelihood": log_loss,
 
         "mean_absolute_error": mean_absolute_error,
-        "mean_squared_error": mean_squared_error,
+        "MSE": mean_squared_error,
         "mean_squared_log_error": mean_squared_log_error
     }
 
@@ -174,33 +176,22 @@ class AbstractModel(ABC):
         :return: the score
         """
         if task == REGRESSION:
-            if metric in self.ACCEPTED_REGRESSION_METRICS:
-                scorer = self.METRICS_TO_FUNCTION_MAP[metric]
-
-                pred = self.predict(X)
-
-                y_true = Y.to_numpy()
-                y_pred = pred.to_numpy()
-                score = scorer(y_true, y_pred)
-                return score
-            else:
+            if not( metric in self.ACCEPTED_REGRESSION_METRICS):
                 raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
         elif task == CLASSIFICATION:
-            if metric in self.ACCEPTED_CLASSIFICATION_METRICS:
-                scorer = self.METRICS_TO_FUNCTION_MAP[metric]
-
-                pred = self.predict(X)
-
-                y_true = Y.to_numpy()
-                y_pred = pred.to_numpy()
-                score = scorer(y_true, y_pred)
-
-                return 1 - score
-                # there a higher score is better, but the goal is minimization, this is why it is used 1/score
-            else:
+            if not (metric in self.ACCEPTED_CLASSIFICATION_METRICS):
                 raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
         else:
             raise AbstractModelException("Task type {} not understood.".format(task))
+
+        scorer = self.METRICS_TO_FUNCTION_MAP[metric]
+
+        pred = self.predict(X)
+
+        y_true = Y.to_numpy()
+        y_pred = pred.to_numpy()
+        score = scorer(y_true, y_pred)
+        return score
 
     @abstractmethod
     def to_dict(self) -> dict:

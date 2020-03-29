@@ -59,7 +59,7 @@
   "TRAINING_CONFIG": {
     "TYPE": "default",
     "TASK": "classification",
-    "TIME": "10s",
+    "TIME": "2m",
     "PREDICTED_COLUMN_NAME": "Survived",
 
     "DEFAULT_MODEL": "svm",
@@ -104,13 +104,13 @@
 
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
-      "GENERAL_CRITERION": "accuracy",
-      "POPULATION_SIZE": 8,
+      "GENERAL_CRITERION": "BCE",
+      "POPULATION_SIZE": 20,
       "SEARCHING_TIME_SHARE": 0.5,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {
         "OPTIMIZER_CHOICE" : ["Adam","SGD"],
-        "LEARNING_RATE_RANGE": [0.000001, 0.1],
+        "LEARNING_RATE_RANGE": [0.000001, 0.001],
         "MOMENTUM_RANGE": [0,1],
         "HIDDEN_LAYERS_CHOICES": ["smooth",[10,32,8]],
         "ACTIVATION_CHOICES": ["sigmoid","relu","linear"],

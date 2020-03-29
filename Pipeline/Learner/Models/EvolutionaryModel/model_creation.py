@@ -79,6 +79,11 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
         else:
             activation[-1] = "sigmoid"
 
+
+    # TODO remove later
+    if type(activation) is list and activation[-1] != "sigmoid":
+        print(1)
+
     # dropout
     if random() < 0.5:
         dropout = uniform(*config.get("DROPOUT_RANGE", [0, 0.6]))

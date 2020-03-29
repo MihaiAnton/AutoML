@@ -78,6 +78,9 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
                         activation.append(config2.get("ACTIVATIONS")[i])
                     else:
                         activation.append(config1.get("ACTIVATIONS")[i])
+
+            if config1.get("ACTIVATIONS")[-1] == "sigmoid" and config2.get("ACTIVATIONS")[-1] == "sigmoid":
+                activation[-1] = "sigmoid"
         else:
             activation = choice([config1.get("ACTIVATIONS"), config2.get("ACTIVATIONS")])
 

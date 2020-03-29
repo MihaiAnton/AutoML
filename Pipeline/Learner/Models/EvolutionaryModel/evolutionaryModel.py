@@ -131,12 +131,17 @@ class EvolutionaryModel(AbstractModel):
         # add population models to statistics
         self._models_tried = [
             {
-                "MODEL_TYPE": chromosome.get_model().model_type(),
+                "MODEL_SUMMARY": chromosome.get_model().summary(),
                 "DESCRIPTION": str(chromosome.get_model()),
                 "SCORE": chromosome.get_fitness()
             }
             for chromosome in self._population.get_chromosomes()
         ]
+
+        for model in self._models_tried:
+            if "'linear']" in model['DESCRIPTION']:
+                # TODO remove later
+                print(1)
 
         # searches for the best model
         print("Searching for the best model...") if verbose else None
@@ -162,18 +167,18 @@ class EvolutionaryModel(AbstractModel):
 
             # update the best model
             population_best = self._population.get_best()
-            self._best_model = population_best.get_model()
-            self._model_score = population_best.get_fitness()
+            if self._best_model is None or self._model_score > population_best.get_fitness():
+                self._best_model = population_best.get_model()
+                self._model_score = population_best.get_fitness()
+                self._epoch_bests.append({
+                    "MODEL_SUMMARY": self._best_model.summary(),
+                    "DESCRIPTION": str(self._best_model),
+                    "SCORE": self._model_score
+                })
 
             # gather statistics
-            self._epoch_bests.append({
-                "MODEL_TYPE": self._best_model.model_type(),
-                "DESCRIPTION": str(self._best_model),
-                "SCORE": self._model_score
-            })
-
             self._models_tried.append({
-                "MODEL_TYPE": offspring_m.get_model().model_type(),
+                "MODEL_SUMMARY": offspring_m.get_model().summary(),
                 "DESCRIPTION": str(offspring_m.get_model()),
                 "SCORE": offspring_m.get_fitness()
             })
@@ -251,14 +256,22 @@ class EvolutionaryModel(AbstractModel):
             Returns a dictionary with statistics about training.
             "EPOCHS_BESTS" and "MODELS_TRIED" contain list with dictionaries of form:
                     {
-                        "MODEL_TYPE": the type of the model,
+                        "MODEL_SUMMARY": model summary, computed with the summary() method,
                         "DESCRIPTION": model description,
                         "SCORE": model score
                     }
         :return: dictionary with statistics
         """
-        return {
+        metadata = {}
+
+        train_data = {
             "EPOCH_BESTS": self._epoch_bests,
-            "BEST_MODEL": str(self._best_model),
+            "BEST_MODEL": self._best_model.summary(),
             "MODELS_TRIED": self._models_tried
+        }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
         }
