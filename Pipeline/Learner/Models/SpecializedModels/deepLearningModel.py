@@ -54,6 +54,7 @@ class DeepLearningModel(AbstractModel):
         The framework used is PyTorch.
     """
 
+
     POSSIBLE_ACTIVATIONS = ["relu", "linear", "sigmoid"]  # TODO complete with other activations
     DEFAULT_ACTIVATION = "linear"
     DEFAULT_BATCH_SIZE = 64
@@ -628,3 +629,25 @@ class DeepLearningModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
+
+    def summary(self) -> dict:
+        """
+            Returns summary about the deep learning model
+        :return: dictionary with summary
+        """
+        # TODO maybe more info to be added
+        metadata = {
+            "LAYERS": self._layers,
+            "ACTIVATIONS": self._activations,
+            "DROPOUTS": self._dropouts
+        }
+
+        train_data = {
+            "EPOCH_LOSS_TRAIN": self._epoch_loss_train
+        }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
+        }

@@ -50,6 +50,10 @@ class RandomForestModel(AbstractModel):
         self._n_estimators = None
         self._criterion = None
 
+        # summary data
+        self._train_criterion = None
+        self._val_criterion = None
+
     # noinspection DuplicatedCode
     def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
                      validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
@@ -179,6 +183,12 @@ class RandomForestModel(AbstractModel):
                                                                                 day, hour, minute,
                                                                                 second)) if verbose else None
 
+        if not (validation_split is None):
+            self._train_criterion = self._model.score(x_train, y_train)
+            self._val_criterion = self._model.score(x_val, y_val)
+        else:
+            self._train_criterion = self._model.score(x_train, y_train)
+
     def _model_predict(self, X: DataFrame) -> DataFrame:
         """
                 Predicts the output of X based on previous learning
@@ -280,7 +290,9 @@ class RandomForestModel(AbstractModel):
                 "TASK": self._task,
                 "CONFIGURED": self._configured,
                 "N_ESTIM": self._n_estimators,
-                "CRITERION": self._criterion
+                "CRITERION": self._criterion,
+                "TRAIN_CRIT": self._train_criterion,
+                "VAL_CRIT": self._val_criterion
             }
         }
 
@@ -308,6 +320,8 @@ class RandomForestModel(AbstractModel):
         self._configured = mdata.get("CONFIGURED")
         self._n_estimators = mdata.get("N_ESTIM")
         self._criterion = mdata.get("CRITERION")
+        self._train_criterion = mdata.get("TRAIN_CRIT")
+        self._val_criterion = mdata.get("VAL_CRIT")
 
         # init the model
         self._model = pickle.loads(model)
@@ -325,3 +339,24 @@ class RandomForestModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
+
+    def summary(self) -> dict:
+        """
+            Returns summary about the deep learning model
+        :return: dictionary with summary
+        """
+        metadata = {
+            "N_ESTIMATORS": self._config.get("N_ESTIMATORS", 100),
+            "CRITERION": self._config.get("CRITERION", 'mse')
+        }
+
+        train_data = {
+            "VALIDATION_CRITERION": self._val_criterion,
+            "TRAIN_CRITERION": self._train_criterion
+        }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
+        }

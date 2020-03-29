@@ -345,3 +345,12 @@ class AbstractModel(ABC):
             Returns the configuration that was used to build the model
         :return: dictionary with the configuration
         """
+
+    @abstractmethod
+    def summary(self) -> dict:
+        """
+            Returns the summary of a model.
+            Includes details about the structure of the model (METADATA)
+            And also details about the last training session (if available)
+            Must contain 3 keys: MODEL_TYPE, METADATA and TRAIN_DATA
+        """

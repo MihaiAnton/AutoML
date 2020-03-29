@@ -46,6 +46,10 @@ class SvmModel(AbstractModel):
         self._kernel = None
         self._regularization = None
 
+        # summary data
+        self._train_criterion = None
+        self._val_criterion = None
+
     # noinspection DuplicatedCode
     def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
               validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
@@ -103,11 +107,14 @@ class SvmModel(AbstractModel):
         if not (validation_split is None):
             criterion_train = self._model.score(x_train, y_train)
             criterion_val = self._model.score(x_val, y_val)
+            self._train_criterion = criterion_train
+            self._val_criterion = criterion_val
 
             print("Training finished - Training {}: {} - Validation {}: {}"
                   .format(loss_name, criterion_train, loss_name, criterion_val)) if verbose else None
         else:
             criterion_train = self._model.score(x_train, y_train)
+            self._train_criterion = criterion_train
             print("Training finished - Training {}: {}".format(loss_name, criterion_train)) if verbose else None
 
     def _model_predict(self, X: DataFrame) -> DataFrame:
@@ -150,7 +157,9 @@ class SvmModel(AbstractModel):
                 "TASK": self._task,
                 "CONFIGURED": self._configured,
                 "KERNEL": self._kernel,
-                "REGULARIZATION": self._regularization
+                "REGULARIZATION": self._regularization,
+                "TRAIN_CRIT": self._train_criterion,
+                "VAL_CRIT": self._val_criterion
             }
         }
 
@@ -178,6 +187,8 @@ class SvmModel(AbstractModel):
         self._configured = mdata.get("CONFIGURED")
         self._kernel = mdata.get("KERNEL")
         self._regularization = mdata.get("REGULARIZATION")
+        self._train_criterion = mdata.get("TRAIN_CRIT")
+        self._val_criterion = mdata.get("VAL_CRIT")
 
         # init the model
         self._model = pickle.loads(model)
@@ -237,3 +248,24 @@ class SvmModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
+
+    def summary(self) -> dict:
+        """
+            Returns summary about the deep learning model
+        :return: dictionary with summary
+        """
+        metadata = {
+            "REGULARIZATION": self._config.get("REGULARIZATION_C", 1.0),
+            "KERNEL": self._config.get("KERNEL", "rbf")
+        }
+
+        train_data = {
+            "VALIDATION_CRITERION": self._val_criterion,
+            "TRAIN_CRITERION": self._train_criterion
+        }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
+        }
