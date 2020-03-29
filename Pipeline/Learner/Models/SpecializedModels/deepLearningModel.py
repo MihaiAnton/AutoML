@@ -341,13 +341,21 @@ class DeepLearningModel(AbstractModel):
 
         return self
 
-    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str):
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str, include_train_stats: bool = False):
         """
             Returns the eval function for the base class adding other metrics to it like convergence rate,
         plateau regions and non-descending loss sections.
+       :param task: the task of the model (REGRESSION / CLASSIFICATION)
+        :param X: the input dataset
+        :param Y: the dataset to compare the prediction to
+        :param metric: the metric used
+        :param include_train_stats: decides whether to include the last training's stats or not
         """
         base_loss = AbstractModel.eval(self, X, Y, task, metric)
         final_loss = base_loss
+
+        if include_train_stats is False:
+            return final_loss
 
         loss_diff = [self._epoch_loss_train[i - 1] - self._epoch_loss_train[i]
                      for i in range(len(self._epoch_loss_train) - 1)]
@@ -364,17 +372,18 @@ class DeepLearningModel(AbstractModel):
         for diff in loss_diff:
             if diff > 0:
                 positive_drops += 1
-
-        final_loss += base_loss * (positive_drops / len(loss_diff))
+        if len(loss_diff) > 0:
+            final_loss += base_loss * (positive_drops / len(loss_diff))
 
         # compute the standard deviation of loss changes: the lower the better
         # (we want a steady decrease rather than a stepped one)
-        mean_val = np.mean(loss_diff)
+        if len(loss_diff) > 0:
+            mean_val = np.mean(loss_diff)
 
-        if mean_val < 0.1:
-            mean_val = 0.1
+            if mean_val < 0.1:
+                mean_val = 0.1
 
-        final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
+            final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
 
         return final_loss
 
@@ -448,6 +457,7 @@ class DeepLearningModel(AbstractModel):
                             "Not able to use activation function {}".format(activation_requested))
                 activations = activation_requested + [activation_requested[-1]] * (
                         len(hidden_layers) + 1 - len(activation_requested))
+
         self._activations = activations
 
         # dropout

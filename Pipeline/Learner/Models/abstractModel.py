@@ -42,7 +42,6 @@ class AbstractModel(ABC):
         self._discarded_column_names = []
         self._discarded_data = None
 
-
     def _discard_columns(self, X: DataFrame, columns: list = None, caching: bool = False) -> DataFrame:
         """
             Removes the columns marked explicitly to be removed in columns
@@ -100,7 +99,8 @@ class AbstractModel(ABC):
 
         # train the actual model
         try:
-            return self._model_train(X, Y, train_time, validation_split, callbacks, verbose)
+            return self._model_train(X, Y, train_time, validation_split=validation_split, callbacks=callbacks,
+                                     verbose=verbose)
         except Exception as err:
             raise AbstractModelException(err)
 
@@ -162,9 +162,10 @@ class AbstractModel(ABC):
         """
         return self.predict(X)
 
-    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str):
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str, include_train_stats: bool = False):
         """
             Evaluates the model's performance and returns a score
+        :param include_train_stats: decides whether to include the last training's stats or not
         :param task: the task of the model (REGRESSION / CLASSIFICATION)
         :param X: the input dataset
         :param Y: the dataset to compare the prediction to

@@ -50,11 +50,11 @@ class Cleaner:
         if self._config.get('REMOVE_ROWS', False):
             column_count = len(data.columns)
             remove_threshold = float(self._config.get('ROW_REMOVAL_THRESHOLD', 1))
-            data = data[data.isna().sum(
-                axis=1) <= column_count - remove_threshold * column_count]  # filter out the ones that have too many missing values
+            data = data[data.isna().sum(axis=1) <= column_count - remove_threshold * column_count]
+                                            # filter out the ones that have too many missing values
 
         if self._config.get('REMOVE_COLUMNS', False):
-            row_count = len(data.index)
+            row_count = len(data)
             remove_threshold = float(self._config.get('COLUMN_REMOVAL_THRESHOLD', 1))
             cols_to_drop_null = data.columns[data.isna().sum() >= row_count * remove_threshold].tolist()
             cols_to_drop_null_valid = []

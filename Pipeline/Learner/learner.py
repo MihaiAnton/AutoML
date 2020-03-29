@@ -1,5 +1,3 @@
-import warnings
-
 from ..Mapper import Mapper
 from pandas import DataFrame
 from .Models import AbstractModel

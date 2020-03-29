@@ -1,8 +1,9 @@
+from random import randrange
 from pandas import DataFrame
 import time
+from sklearn.model_selection import train_test_split
 
 from ..abstractModel import AbstractModel
-
 from ....Exceptions import EvolutionaryModelException
 from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
@@ -95,6 +96,21 @@ class EvolutionaryModel(AbstractModel):
         # get the training time parameters
         search_time = self._config.get("SEARCHING_TIME_SHARE", 0.5) * train_time  # search for models
 
+        # set up the train test split logic: train the models using a dataset and evaluate them using a validation one
+        if validation_split is None:
+            x_train = X
+            x_val = X
+            y_train = Y
+            y_val = Y
+        else:
+            if type(validation_split) != float:
+                validation_split = 0.2
+            validation_split = max(validation_split, 0.1)
+            validation_split = min(validation_split, 0.9)
+
+            x_train, x_val, y_train, y_val = train_test_split(X, Y, test_size=validation_split,
+                                                              random_state=randrange(2048))
+
         # set up time tracking
         start_time = time.time()
         search_final = start_time + search_time
@@ -109,8 +125,8 @@ class EvolutionaryModel(AbstractModel):
         model_eval_time = search_time / (self._config.get("POPULATION_SIZE", 10) * 10)
 
         print("Evaluating population...") if verbose else None
-        self._population.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
-                              validation_split=validation_split)
+        self._population.eval(x_train, y_train, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
+                              validation_split=None)
 
         # add population models to statistics
         self._models_tried = [
@@ -138,8 +154,8 @@ class EvolutionaryModel(AbstractModel):
             offspring_m = self._population.mutation(offspring)  # perform a mutation
 
             # evaluate the result
-            offspring_m.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
-                             validation_split=validation_split)
+            offspring_m.eval(x_train, y_train, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
+                             validation_split=None)
 
             # add it in the population
             self._population.replace(offspring_m)
@@ -172,14 +188,21 @@ class EvolutionaryModel(AbstractModel):
                 keep_searching = True  # train one more epoch
 
             # output epoch details
-            print("Epoch {:3d} -  Best Score: {:.5f} | Search time: {:.2f} seconds".format(
-                epochs, population_best.get_fitness(), epoch_duration)) if verbose else None
+            validation_data = ""
+            if validation_split is not None:
+                validation_data = " Validation Score: {:.5f} |".format(
+                    self._best_model.eval(x_val, y_val, self._task, self._config.get("GENERAL_CRITERION"))
+                )
+
+            print("Epoch {:3d} -  Best Score: {:.5f} |{} Search time: {:.2f} seconds".format(
+                epochs, population_best.get_fitness(), validation_data, epoch_duration)) if verbose else None
+
 
         # training the best model
         print("Training the best model...") if verbose else None
         self._model = self._population.get_best().get_model()
         best_model_time = int(train_time - (time.time() - start_time))  # the amount of seconds remaining
-        self._model.train(X, Y, train_time=best_model_time, verbose=verbose)
+        self._model.train(X, Y, train_time=best_model_time, verbose=verbose, validation_split=validation_split)
 
         # return the trained best model
         return self._model
