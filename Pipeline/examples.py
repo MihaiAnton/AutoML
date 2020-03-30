@@ -209,5 +209,5 @@ model.save("../ModelFiles/model")           # save as binary file as well
 pipeline = load_pipeline("../PipelineFiles/pipeline")
 model = load_model("../ModelFiles/model")
 
-both the pipeline and the model will be the same as before saving (the pipeline may lack the model in include_model is
-set to false; this is done for memory purposes)
+# both the pipeline and the model will be the same as before saving (the pipeline may lack the model in include_model is
+# set to false; this is done for memory purposes)
