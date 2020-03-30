@@ -92,6 +92,8 @@ class Pipeline:
             self._learner = Learner(self._config.get("TRAINING_CONFIG", {}))
             self._model = None
 
+            self._mapper.set("CONVERSION_DONE", False)
+
         else:  # initialized by the load_pipeline method
             self._mapper = mapper
             self._config = mapper.get("CONFIG", default={})
@@ -109,8 +111,6 @@ class Pipeline:
         current_status = self._mapper.get(self.STATE_MACRO, False)
         if current_status is False:
             self._mapper.set(self.STATE_MACRO, self.RAW_STATE)
-
-        self._mapper.set("CONVERSION_DONE", False)
 
     def _record_data_information(self, data: DataFrame, source: str, *args, **kwargs) -> None:
         """
@@ -269,6 +269,10 @@ class Pipeline:
         if discard_columns is None:
             discard_columns = []
 
+        y_column = self._config.get("DATA_PROCESSING_CONFIG", {}).get("PREDICTED_COLUMN_NAME", "")
+        if y_column in data.columns:
+            data = data.drop(y_column, axis=1)
+
         discarded_data = self._copy_columns(data, discard_columns)
 
         columns = list(data.columns)
@@ -276,6 +280,8 @@ class Pipeline:
 
         learnt_columns = self._mapper.get("X_COLUMNS_TRAIN", [])
         learnt_columns.sort()
+
+        # in the unlikely case that the data contains the predicted column, remove it
 
         if columns == learnt_columns:  # the columns to predicts are the learnt columns
             self._mapper.set(self.STATE_MACRO, self.PREDICTED_STATE)
