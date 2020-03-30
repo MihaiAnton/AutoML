@@ -29,9 +29,13 @@ config = {  # create a dictionary to modify parts of the configuration
     "TRAINING": True,
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
-        "TASK": "regression",
-        "TIME": "10m",
-        "PREDICTED_COLUMN_NAME": "Survived"
+        "TASK": "classification",
+        "TIME": "20s",
+        "PREDICTED_COLUMN_NAME": "Survived",
+
+        "EVOLUTIONARY_MODEL_CONFIG": {
+              "GENERAL_CRITERION": "BCE"
+        }
     }
 }
 pipeline = Pipeline(config=config)  # create a pipeline with an augmented configuration
@@ -44,7 +48,6 @@ prediction = model.predict(converted_data)  # using explicit conversion
 # or
 prediction = pipeline.predict(new_data)  # for implicit conversion
 prediction.to_csv("../Results/titanic_prediction.csv")
-
 
 
 
@@ -73,9 +76,6 @@ processes_data.to_csv("../Datasets/titanic_processed.csv")
 
 
 
-
-
-
 # FLOW 3 - The default learning flow -----------------------------------------------------------------------------------
 # choose a default model in the custom configuration and train it
 
@@ -94,7 +94,7 @@ config = {  # create a dictionary to modify parts of the configuration
     "TRAINING": True,
     "TRAINING_CONFIG": {
         "TYPE": "default",
-        "TIME": "10m",
+        "TIME": "10s",
         "PREDICTED_COLUMN_NAME": "Survived",
         "DEFAULT_MODEL": "neural_network"
     }
@@ -134,7 +134,7 @@ config = {  # create a dictionary to modify parts of the configuration
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "regression",
-        "TIME": "10m",
+        "TIME": "10s",
         "PREDICTED_COLUMN_NAME": "Survived"
     }
 }
@@ -147,9 +147,7 @@ converted_data = pipeline.convert(new_data)
 prediction = model.predict(converted_data)  # using explicit conversion
 # or
 prediction = pipeline.predict(new_data)  # for implicit conversion
-prediction.to_csv("../Results/titanic_prediction.csv")
-
-
+prediction.to_csv("titanic_prediction.csv")
 
 
 
@@ -171,12 +169,12 @@ converted_data.to_csv("../Datasets/titanic_converted.csv")
 # FLOW 6 - The raw data prediction flow --------------------------------------------------------------------------------
 # based on a saved pipeline that has previously been used to process data and learn a model, you can predict raw data
 
-pipeline = load_pipeline("../PipelineFiles/pipeline")  # load a pipeline that has previously processed data and learnt
+pipeline = load_pipeline("pipeline")  # load a pipeline that has previously processed data and learnt
 #            a model (so it has the rules and the model saved)
 data = read_csv("../Datasets/titanic.csv")  # read the dataset
 prediction = pipeline.predict(data)
 
-
+print(1)
 
 
 
@@ -184,14 +182,12 @@ prediction = pipeline.predict(data)
 # FLOW 7 - The converted data prediction flow --------------------------------------------------------------------------
 # same as FLOW 6, but conversion can be done separately
 
-pipeline = load_pipeline("../PipelineFiles/pipeline")  # load a pipeline that has previously processed data and learnt
+pipeline = load_pipeline("pipeline")  # load a pipeline that has previously processed data and learnt
 #            a model (so it has the rules and the model saved)
 data = read_csv("../Datasets/titanic.csv")  # read the dataset
 converted_data = pipeline.convert(data)
 
 prediction = pipeline.predict(converted_data)
-
-
 
 
 
@@ -213,5 +209,5 @@ model.save("../ModelFiles/model")           # save as binary file as well
 pipeline = load_pipeline("../PipelineFiles/pipeline")
 model = load_model("../ModelFiles/model")
 
-# both the pipeline and the model will be the same as before saving (the pipeline may lack the model in include_model is
-# set to false; this is done for memory purposes)
+both the pipeline and the model will be the same as before saving (the pipeline may lack the model in include_model is
+set to false; this is done for memory purposes)
