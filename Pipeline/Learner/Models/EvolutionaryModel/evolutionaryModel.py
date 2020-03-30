@@ -199,7 +199,6 @@ class EvolutionaryModel(AbstractModel):
             print("Epoch {:3d} -  Best Score: {:.5f} |{} Search time: {:.2f} seconds".format(
                 epochs, population_best.get_fitness(), validation_data, epoch_duration)) if verbose else None
 
-
         # training the best model
         print("Training the best model...") if verbose else None
         self._model = self._population.get_best().get_model()

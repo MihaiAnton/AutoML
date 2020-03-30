@@ -104,7 +104,7 @@
 
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
-      "GENERAL_CRITERION": "MSE",
+      "GENERAL_CRITERION": "",
       "POPULATION_SIZE": 20,
       "SEARCHING_TIME_SHARE": 0.5,
 

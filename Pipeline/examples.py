@@ -30,11 +30,11 @@ config = {  # create a dictionary to modify parts of the configuration
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "classification",
-        "TIME": "20s",
+        "TIME": "40s",
         "PREDICTED_COLUMN_NAME": "Survived",
 
         "EVOLUTIONARY_MODEL_CONFIG": {
-              "GENERAL_CRITERION": "BCE"
+              "GENERAL_CRITERION": ""
         }
     }
 }

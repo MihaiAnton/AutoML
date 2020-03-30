@@ -1,4 +1,5 @@
 import pickle
+import warnings
 from abc import ABC, abstractmethod
 from pandas import DataFrame, concat
 from sklearn.metrics import log_loss, \
@@ -181,14 +182,17 @@ class AbstractModel(ABC):
         :raises AbstractModelException: on any actual model prediction error
         :return: the score
         """
-        if task == REGRESSION:
-            if not (metric in self.ACCEPTED_REGRESSION_METRICS):
-                raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
-        elif task == CLASSIFICATION:
-            if not (metric in self.ACCEPTED_CLASSIFICATION_METRICS):
-                raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
-        else:
+        if task not in [CLASSIFICATION, REGRESSION]:
             raise AbstractModelException("Task type {} not understood.".format(task))
+
+        if metric not in self.ACCEPTED_CLASSIFICATION_METRICS + self.ACCEPTED_REGRESSION_METRICS:
+            # go with a default metric type
+            old_metric = metric
+            if task == CLASSIFICATION:
+                metric = "BCE"
+            else:
+                metric = "MSE"
+            # TODO write to log file
 
         scorer = self.METRICS_TO_FUNCTION_MAP[metric]
 
