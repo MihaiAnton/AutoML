@@ -6,7 +6,7 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
-      "COLUMNS_TO_REMOVE": ["Id"],
+      "COLUMNS_TO_REMOVE": [],
       "DO_NOT_REMOVE": [],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
@@ -16,7 +16,7 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "PREDICTED_COLUMN_NAME": "",
 
 
     "FEATURE_ENGINEERING": true,
@@ -60,7 +60,7 @@
     "TYPE": "default",
     "TASK": "classification",
     "TIME": "2m",
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "PREDICTED_COLUMN_NAME": "",
 
     "DEFAULT_MODEL": "svm",
 
