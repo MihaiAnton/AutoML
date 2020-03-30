@@ -228,9 +228,6 @@ class Population:
         :param best_fitness: float, the best score so far
         :return: bool
         """
-        if best_fitness is None or actual_fitness is None:
-            print(1)
-
         return actual_fitness < best_fitness  # important: the general problem is considered
         # to be a minimization problem, thus a lower fitness is better
 

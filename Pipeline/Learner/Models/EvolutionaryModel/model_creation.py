@@ -68,7 +68,7 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     # the same as with layers, we put more bias on a list of random activations rather than a smooth activation choice
     activation_choice = choices(["uniform", "list"], weights=[0.3, 0.7])[0]
     if activation_choice == "uniform" or layers == "smooth":
-        activation = choice(choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"])))
+        activation = choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"]))
     else:
         activation = [choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"]))
                       for _ in range(len(layers) + 1)]
@@ -78,11 +78,6 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
             activation = "sigmoid"
         else:
             activation[-1] = "sigmoid"
-
-
-    # TODO remove later
-    if type(activation) is list and activation[-1] != "sigmoid":
-        print(1)
 
     # dropout
     if random() < 0.5:

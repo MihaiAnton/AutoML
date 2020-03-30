@@ -2,23 +2,28 @@
 # the code is similar to the code used for the other approaches, but all the changes rely in the configuration file
 import json
 
-from pandas import read_csv
 from Pipeline import Pipeline
+from sklearn import datasets
 
-data = read_csv("../Datasets/house_train.csv")
+from pandas import DataFrame, concat
+iris = datasets.load_iris()
+x = DataFrame(iris['data'], columns = iris['feature_names'])
+target = [[iris['target_names'][i]] for i in iris['target']]
+y = DataFrame(target, columns =['iris'])
+data = concat([x,y], axis=1)
 
 # create a pipeline with the default configuration
 config = {
     "DATA_PROCESSING": True,
     "DATA_PROCESSING_CONFIG": {
-        "PREDICTED_COLUMN_NAME": "SalePrice",
+        "PREDICTED_COLUMN_NAME": "iris",
     },
     "TRAINING": True,
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
-        "TASK": "regression",
-        "TIME": "1m",
-        "PREDICTED_COLUMN_NAME": "SalePrice"
+        "TASK": "classification",
+        "TIME": "2m",
+        "PREDICTED_COLUMN_NAME": "iris"
     }
 }
 

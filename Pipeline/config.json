@@ -6,7 +6,7 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
-      "COLUMNS_TO_REMOVE": ["PassengerId"],
+      "COLUMNS_TO_REMOVE": ["Id"],
       "DO_NOT_REMOVE": [],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
@@ -78,7 +78,7 @@
     "RANDOM_FOREST_CONFIG": {
       "CLASSIFIER": {
         "N_ESTIMATORS": 100,
-        "CRITERION": "gini",
+        "CRITERION": "entropy",
         "MIN_SAMPLES_SPLIT": 2,
         "MAX_FEATURES": "sqrt"
       },
@@ -104,7 +104,7 @@
 
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
-      "GENERAL_CRITERION": "BCE",
+      "GENERAL_CRITERION": "MSE",
       "POPULATION_SIZE": 20,
       "SEARCHING_TIME_SHARE": 0.5,
 

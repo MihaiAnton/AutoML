@@ -138,10 +138,7 @@ class EvolutionaryModel(AbstractModel):
             for chromosome in self._population.get_chromosomes()
         ]
 
-        for model in self._models_tried:
-            if "'linear']" in model['DESCRIPTION']:
-                # TODO remove later
-                print(1)
+
 
         # searches for the best model
         print("Searching for the best model...") if verbose else None
@@ -212,16 +209,17 @@ class EvolutionaryModel(AbstractModel):
         # return the trained best model
         return self._model
 
-    def _model_predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
-                Predicts the output of X based on previous learning
-            :param X: DataFrame; the X values to be predicted into some Y Value
-            :return: DataFrame with the predicted data
+            Predicts the output of X based on previous learning
+        :param X: DataFrame; the X values to be predicted into some Y Value
+        :param raw_output: returns the exact output of the model, without rebasing into the initial classes
+        :return: DataFrame with the predicted data
         """
         if self._model is None:
             raise EvolutionaryModelException("Train the model before performing a prediction.")
 
-        return self._model.predict(X)
+        return self._model.predict(X, raw_output=raw_output)
 
     def to_dict(self) -> dict:
         """

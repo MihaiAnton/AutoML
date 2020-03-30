@@ -107,10 +107,11 @@ class DeepLearningModel(AbstractModel):
         # training metrics useful for evaluation
         self._epoch_loss_train = []  # for each epoch the loss is collected in this array
 
-    def _model_predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
             Predicts a set of data transformed to fit to the model's input expectation
         :param X: dataset to predict
+        :param raw_output: returns the exact output of the model, without rebasing into the initial classes
         :return: DataFrame with the output
         """
         if self._train_mode:
@@ -130,7 +131,7 @@ class DeepLearningModel(AbstractModel):
         df.fillna(0, inplace=True)  # TODO find better alternative
         # was added just in case a value is nan
 
-        if self._task == CLASSIFICATION:
+        if self._task == CLASSIFICATION and raw_output is False:
             mapping = self._classification_mapping["mapping"]
             df_mapped = self._from_categorical(df, mapping)
             df = df_mapped

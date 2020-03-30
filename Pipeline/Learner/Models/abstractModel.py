@@ -1,11 +1,12 @@
 import pickle
 from abc import ABC, abstractmethod
 from pandas import DataFrame, concat
-from sklearn.metrics import log_loss,\
+from sklearn.metrics import log_loss, \
     mean_absolute_error, mean_squared_error, mean_squared_log_error
 
 from .constants import CLASSIFICATION, REGRESSION
 from ...Exceptions import AbstractModelException
+from .modelTypes import DEEP_LEARNING_MODEL
 
 
 class AbstractModel(ABC):
@@ -120,13 +121,14 @@ class AbstractModel(ABC):
         :return: the model
         """
 
-    def predict(self, X: DataFrame, discard_columns: list = None) -> DataFrame:
+    def predict(self, X: DataFrame, discard_columns: list = None, raw_output: bool = False) -> DataFrame:
         """
             Predicts the output of X based on previous learning
 
         :param X: DataFrame; the X values to be predicted into some Y Value
         :param discard_columns: the list of column names to discard from the actual prediction
                             if not provided, the discarded columns used in training are used now
+        :param raw_output: returns the exact output of the model, without rebasing into the initial classes
         :raises AbstractModelException: on any actual model prediction error
         :return: DataFrame with the predicted data
         """
@@ -142,6 +144,9 @@ class AbstractModel(ABC):
         except Exception as err:
             raise AbstractModelException(err)
 
+        if raw_output:
+            return prediction
+
         # append the removed columns
         prediction = self._append_discarded_columns(prediction)
 
@@ -149,10 +154,11 @@ class AbstractModel(ABC):
         return prediction
 
     @abstractmethod
-    def _model_predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
             Predicts the output of X based on previous learning. To be implemented in child classes
         :param X: DataFrame; the X values to be predicted into some Y Value
+        :param raw_output: returns the exact output of the model, without rebasing into the initial classes
         :return: DataFrame with the predicted data
         """
 
@@ -176,7 +182,7 @@ class AbstractModel(ABC):
         :return: the score
         """
         if task == REGRESSION:
-            if not( metric in self.ACCEPTED_REGRESSION_METRICS):
+            if not (metric in self.ACCEPTED_REGRESSION_METRICS):
                 raise AbstractModelException("Metric {} not defined for {}.".format(metric, task))
         elif task == CLASSIFICATION:
             if not (metric in self.ACCEPTED_CLASSIFICATION_METRICS):
@@ -186,11 +192,12 @@ class AbstractModel(ABC):
 
         scorer = self.METRICS_TO_FUNCTION_MAP[metric]
 
-        pred = self.predict(X)
+        pred = self._model_predict(X, raw_output=True)
+        pred = pred.reindex(sorted(pred.columns), axis=1)
 
-        y_true = Y.to_numpy()
-        y_pred = pred.to_numpy()
-        score = scorer(y_true, y_pred)
+        # y_true = Y.to_numpy()         # FIXME it seems like the scorer works with DataFrames
+        # y_pred = pred.to_numpy()              # change if not working
+        score = scorer(Y, pred)
         return score
 
     @abstractmethod

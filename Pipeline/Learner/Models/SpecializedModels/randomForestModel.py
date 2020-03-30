@@ -189,10 +189,11 @@ class RandomForestModel(AbstractModel):
         else:
             self._train_criterion = self._model.score(x_train, y_train)
 
-    def _model_predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
                 Predicts the output of X based on previous learning
             :param X: DataFrame; the X values to be predicted into some Y Value
+            :param raw_output: returns the exact output of the model, without rebasing into the initial classes
             :return: DataFrame with the predicted data
         """
         if self._model is None:
@@ -360,3 +361,17 @@ class RandomForestModel(AbstractModel):
             "METADATA": metadata,
             "TRAIN_DATA": train_data
         }
+
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str, include_train_stats: bool = False):
+        """
+            Not available for this type of model. Throws warning and returns 0.
+        :param X:
+        :param Y:
+        :param task:
+        :param metric:
+        :param include_train_stats:
+        :return: 0
+        """
+        warnings.warn("Method eval() of AbstractModel not available for RandomForestModel.", RuntimeWarning)
+
+        return 0
