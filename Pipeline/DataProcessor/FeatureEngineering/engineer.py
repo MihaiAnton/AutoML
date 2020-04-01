@@ -177,7 +177,14 @@ class Engineer:
             column_meta_data['normalization_mean'] = mean
             column_meta_data['normalization_std'] = std
 
-            data = (data - mean) / std
+            any_std_0 = False
+            for s in std:
+                if s == 0:
+                    any_std_0 = True
+                    break
+
+            if any_std_0 is False:
+                data = (data - mean) / std
         else:
             column_meta_data['normalization_method'] = 'none'
 
