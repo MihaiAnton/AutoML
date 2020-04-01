@@ -56,6 +56,11 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
                         layers[i] = config2.get("HIDDEN_LAYERS")[i]
                     else:
                         layers[i] = config1.get("HIDDEN_LAYERS")[i]
+            # TODO remove later
+            for layer in layers:
+                if layer == 0:
+                    raise Exception("!!!!! Critical exception (model_crossover.py): zero sized layer problem")
+
         else:
             layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
 

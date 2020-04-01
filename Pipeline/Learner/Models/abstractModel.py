@@ -219,14 +219,12 @@ class AbstractModel(ABC):
         # y_true = Y.to_numpy()         # FIXME it seems like the scorer works with DataFrames
         # y_pred = pred.to_numpy()              # change if not working
         try:
-            # TODO set the labels somehow
             labels = self.get_labels()
             if len(labels) <= 1:
                 labels = None
             score = scorer(Y, pred, labels=labels)
         except Exception as err:
-            score=12
-            print('err eval')
+            raise AbstractModelException("Could not score the results.")
         return score
 
     @abstractmethod

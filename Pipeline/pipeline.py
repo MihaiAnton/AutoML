@@ -242,6 +242,9 @@ class Pipeline:
             if col in X.columns:
                 to_discard_valid.append(col)
 
+        if len(to_discard_valid) == 0:
+            return None
+
         return X.loc[:, to_discard_valid]
 
     def _append_discarded_columns(self, X: DataFrame, columns: DataFrame) -> DataFrame:

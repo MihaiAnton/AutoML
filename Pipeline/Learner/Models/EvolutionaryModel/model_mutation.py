@@ -38,8 +38,13 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
     layers = config.get("HIDDEN_LAYERS")
     if type(layers) is list:
         for i in range(len(layers)):
-            layer = layers[i] + choice([1, -1]) * layers[i] * random() * 0.2
-            layers[i] = int(layer)
+            layer = layers[i] + choice([1, -1]) * layers[i] * random() * 0.1    # if the size of the layer is x, the new
+            layers[i] = int(layer)                                              # size is in [ 0.9*x , 1.1*x ]
+
+        # TODO remove later
+        for layer in layers:
+            if layer == 0:
+                raise Exception("!!!!! Critical exception (model_mutation.py): zero sized layer problem")
 
     # activations
     activations = config.get("ACTIVATIONS")

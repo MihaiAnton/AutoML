@@ -62,8 +62,14 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     if type(layer_choice) is list:
         layer_count = randint(1, max(layer_choice[2], 1))
         layers = [randint(layer_choice[0], layer_choice[1]) for _ in range(layer_count)]
+        # TODO remove later
+        for layer in layers:
+            if layer == 0:
+                raise Exception("!!!!! Critical exception (model_creation.py): zero sized layer problem")
     else:
         layers = "smooth"
+
+
 
     # the same as with layers, we put more bias on a list of random activations rather than a smooth activation choice
     activation_choice = choices(["uniform", "list"], weights=[0.3, 0.7])[0]

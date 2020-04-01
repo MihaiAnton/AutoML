@@ -1,3 +1,4 @@
+import warnings
 from random import randrange
 from pandas import DataFrame
 import time
@@ -272,3 +273,7 @@ class EvolutionaryModel(AbstractModel):
             "METADATA": metadata,
             "TRAIN_DATA": train_data
         }
+
+    def get_labels(self) -> list:
+        warnings.warn("Method get_labels is not available for EvolutionaryModel")
+        return []

@@ -55,6 +55,7 @@ class DeepLearningModel(AbstractModel):
     """
 
 
+
     POSSIBLE_ACTIVATIONS = ["relu", "linear", "sigmoid"]  # TODO complete with other activations
     DEFAULT_ACTIVATION = "linear"
     DEFAULT_BATCH_SIZE = 64
@@ -106,6 +107,9 @@ class DeepLearningModel(AbstractModel):
 
         # training metrics useful for evaluation
         self._epoch_loss_train = []  # for each epoch the loss is collected in this array
+
+        # classification labels
+        self._classification_labels = []
 
     def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
@@ -161,6 +165,8 @@ class DeepLearningModel(AbstractModel):
 
         # if the task is classification - modify the Y column and create a mapping between actual columns and encodings
         if self._task == CLASSIFICATION:
+            predicted_y = list(Y.columns)[0]
+            self._classification_labels = list(Y[predicted_y].unique())
             self._classification_mapping["mapping"] = self._categorical_mapping(Y)
             self._classification_mapping["previous_out_layers"] = self._output_count
             self._classification_mapping["previous_predicted_names"] = self._predicted_name
@@ -243,7 +249,6 @@ class DeepLearningModel(AbstractModel):
 
         # train the model
         self._model.zero_grad()
-
         while keep_training:
             keep_training = False
 
@@ -264,7 +269,7 @@ class DeepLearningModel(AbstractModel):
 
                 losses = []
                 for out in range(len(self._predicted_name)):
-                        losses.append(criterion(output[:, out], batch_y[:, out]))
+                    losses.append(criterion(output[:, out], batch_y[:, out]))
                 del output
 
                 loss = losses[0]
@@ -476,7 +481,6 @@ class DeepLearningModel(AbstractModel):
             dropouts = dropouts + [0]*(len(hidden_layers)-len(dropouts))
         self._dropouts = dropouts
 
-
         # create the network class
         class Network(nn.Module):
             def __init__(self):
@@ -654,3 +658,6 @@ class DeepLearningModel(AbstractModel):
             "METADATA": metadata,
             "TRAIN_DATA": train_data
         }
+
+    def get_labels(self) -> list:
+        return self._classification_labels
