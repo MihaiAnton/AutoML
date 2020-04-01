@@ -46,6 +46,7 @@ class AbstractModel(ABC):
         self._discarded_column_names = []
         self._discarded_data = None
 
+
     def _discard_columns(self, X: DataFrame, columns: list = None, caching: bool = False) -> DataFrame:
         """
             Removes the columns marked explicitly to be removed in columns
@@ -82,6 +83,14 @@ class AbstractModel(ABC):
         self._discarded_data = None  # so memory is freed
         return merged_data
 
+    @abstractmethod
+    def get_labels(self) -> list:
+        """
+            Returns the classification labels it learnt from.
+            In case the task is not classification, it returns an empty list.
+        :return: list with text labels
+        """
+
     def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
               callbacks: list = None, verbose: bool = True):
         """
@@ -94,12 +103,17 @@ class AbstractModel(ABC):
         :param Y: the dependents(predicted) values in form of Pandas DataFrame
         :param verbose: decides whether or not the model prints intermediary outputs
         :raises AbstractModelException: on any actual model training error
+                                        on constant value for Y
         :return: the model
         """
         # always sort the columns in alphabetical order, as a rule for both train and predict
         columns = list(X.columns)
         columns.sort()
         X = X[columns]
+
+        # check if there is something to learn; if Y has just one value, throw exception
+        if len(Y.drop_duplicates()) == 1:   # the same value for each row
+            raise AbstractModelException("Could not train model with constant value for Y.")
 
         # train the actual model
         try:
@@ -194,6 +208,9 @@ class AbstractModel(ABC):
                 metric = "MSE"
             # TODO write to log file
 
+        if task is REGRESSION and metric not in self.ACCEPTED_REGRESSION_METRICS:
+            metric = "MSE"
+
         scorer = self.METRICS_TO_FUNCTION_MAP[metric]
 
         pred = self._model_predict(X, raw_output=True)
@@ -201,7 +218,15 @@ class AbstractModel(ABC):
 
         # y_true = Y.to_numpy()         # FIXME it seems like the scorer works with DataFrames
         # y_pred = pred.to_numpy()              # change if not working
-        score = scorer(Y, pred)
+        try:
+            # TODO set the labels somehow
+            labels = self.get_labels()
+            if len(labels) <= 1:
+                labels = None
+            score = scorer(Y, pred, labels=labels)
+        except Exception as err:
+            score=12
+            print('err eval')
         return score
 
     @abstractmethod
