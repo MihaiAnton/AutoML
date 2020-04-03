@@ -1,10 +1,12 @@
 import pickle
 import warnings
+import math
 
+import torch
 from pandas import DataFrame
 
 from ..abstractModel import AbstractModel
-from torch import nn, optim, tensor
+from torch import nn, optim, tensor, autograd
 from ....Exceptions.learnerException import DeepLearningModelException
 from sklearn.model_selection import train_test_split
 from random import randrange
@@ -14,6 +16,10 @@ import pandas as pd
 
 from ..modelTypes import DEEP_LEARNING_MODEL
 from ..constants import AVAILABLE_TASKS, CLASSIFICATION
+
+
+
+WEIGHT_DECAY = 0 # TODO remove
 
 
 class ModuleList(object):
@@ -54,8 +60,6 @@ class DeepLearningModel(AbstractModel):
         The framework used is PyTorch.
     """
 
-
-
     POSSIBLE_ACTIVATIONS = ["relu", "linear", "sigmoid"]  # TODO complete with other activations
     DEFAULT_ACTIVATION = "linear"
     DEFAULT_BATCH_SIZE = 64
@@ -65,6 +69,7 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_LR = 0.01
     DEFAULT_MOMENTUM = 0.4
     DEFAULT_CRITERION = "MSE"
+    DEFAULT_REGULARIZATION = 0.01
     TEMPORARY_FILE = ".tmp_model_file"
 
     def __init__(self, in_size, out_size, task: str = "", config: dict = None, predicted_name: list = None,
@@ -132,7 +137,13 @@ class DeepLearningModel(AbstractModel):
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
         del numpy_array
 
-        df.fillna(0, inplace=True)  # TODO find better alternative
+        if df.isna().any().any():
+            # TODO add to log file
+            pass
+            # raise DeepLearningModelException("NaN values encountered in DeepLearningModel._predict().")
+
+        df.fillna(0, inplace=True)  # TODO find better alternative - this is the quick fix to a deeper problem
+                                    # when doing los.backward() or forward() in the network, nans are produced
         # was added just in case a value is nan
 
         if self._task == CLASSIFICATION and raw_output is False:
@@ -200,12 +211,14 @@ class DeepLearningModel(AbstractModel):
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
         requested_lr = self._config.get("LEARNING_RATE", self.DEFAULT_LR)
         requested_momentum = self._config.get("MOMENTUM", self.DEFAULT_MOMENTUM)
+        requested_regularization = self._config.get("REGULARIZATION", self.DEFAULT_REGULARIZATION)
 
         params = self._model.parameters()
         if requested_optimizer == "SGD":
-            optimizer = optim.SGD(params, lr=requested_lr, momentum=requested_momentum)
+            optimizer = optim.SGD(params, lr=requested_lr, momentum=requested_momentum,
+                                  weight_decay=requested_regularization)
         elif requested_optimizer == "Adam":
-            optimizer = optim.Adam(params, lr=requested_lr)
+            optimizer = optim.Adam(params, lr=requested_lr, weight_decay=requested_regularization)
         else:
             raise DeepLearningModelException("Optimizer {} not understood.".format(requested_optimizer))
 
@@ -263,21 +276,31 @@ class DeepLearningModel(AbstractModel):
                 batch_x = x_train[start_index:start_index + batch_size]
                 batch_y = y_train[start_index:start_index + batch_size]
 
-                optimizer.zero_grad()
+
+                self._model.eval()
                 output = self._model(batch_x)
+                self._model.train()
                 del batch_x
 
-                losses = []
-                for out in range(len(self._predicted_name)):
-                    losses.append(criterion(output[:, out], batch_y[:, out]))
-                del output
+                # TODO check to see if the loss can work without being explicitly summed over all columns
+                # version 1, might cause nan errors
+                # losses = []
+                # for out in range(len(self._predicted_name)):
+                #     losses.append(criterion(output[:, out], batch_y[:, out]))
+                # del output
+                #
+                # loss = losses[0]
+                # for i in range(1, len(losses)):
+                #     loss = loss + losses[i]
 
-                loss = losses[0]
-                for i in range(1, len(losses)):
-                    loss = loss + losses[i]
-
+                # version 2, checking it out
+                loss = criterion(output, batch_y)
+                if torch.isnan(loss).any().item():  # TODO remove
+                    print(1)
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self._model.parameters(), 5000)  # TODO!!!!! remove if does not work
                 optimizer.step()
+                optimizer.zero_grad()
 
                 running_loss += loss.item()
                 start_index += batch_size
@@ -392,6 +415,9 @@ class DeepLearningModel(AbstractModel):
 
             final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
 
+        if math.isnan(final_loss):
+            final_loss = np.inf
+
         return final_loss
 
     def create_model(self):
@@ -504,6 +530,7 @@ class DeepLearningModel(AbstractModel):
                 prev_size = input_layer_size
                 for i in range(len(hidden_layers)):
                     layer = nn.Linear(prev_size, hidden_layers[i])
+
                     prev_size = hidden_layers[i]
                     self._layers.append(layer)
                     self._layer_count += 1
@@ -531,17 +558,38 @@ class DeepLearningModel(AbstractModel):
 
             def forward(self, x):
                 # for each hidden layer: apply the weighted transformation, activate and dropout
+                x_copy = x  # TODO remove
+
+                if torch.isnan(x).any().item():  # TODO remove
+                    print(1)
+
                 for i in range(self._layer_count - 1):
                     x = self._layers[i](x)  # transform
+
+                    if torch.isnan(x).any().item():  # TODO remove
+                        print(1)
 
                     if i < len(self._activations):  # activate
                         x = self._activations[i](x)
 
+                    if torch.isnan(x).any().item():  # TODO remove
+                        print(1)
+
                     if i < len(self._dropouts):  # dropout
                         x = self._dropouts[i](x)
 
+                    if torch.isnan(x).any().item():  # TODO remove
+                        print(1)
+
                 x = self._layers[-1](x)
+
+                if torch.isnan(x).any().item():  # TODO remove
+                    print(1)
+
                 x = self._activations[-1](x)
+
+                if torch.isnan(x).any().item():  # TODO remove
+                    print(1)
 
                 return x
 

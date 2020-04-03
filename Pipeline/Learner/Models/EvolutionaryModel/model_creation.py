@@ -56,20 +56,15 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     optimizer = choice(config.get("OPTIMIZER_CHOICE", ["Adam", "SGD"]))
     learning_rate = uniform(*config.get("LEARNING_RATE_RANGE", [0.000001, 1]))
     momentum = uniform(*config.get("MOMENTUM_RANGE", [0, 1]))
+    regularization = uniform(*config.get("REGULARIZATION_RANGE", [0, 0.01]))
     # in the layer choices, the random choice is more biased towards creating a custom weight range.
     # since using smooth all over the place could be too mainstream
     layer_choice = choices(config.get("HIDDEN_LAYERS_CHOICES", ["smooth", [10, 128, 6]]), weights=[0.1, 0.9])[0]
     if type(layer_choice) is list:
         layer_count = randint(1, max(layer_choice[2], 1))
         layers = [randint(layer_choice[0], layer_choice[1]) for _ in range(layer_count)]
-        # TODO remove later
-        for layer in layers:
-            if layer == 0:
-                raise Exception("!!!!! Critical exception (model_creation.py): zero sized layer problem")
     else:
         layers = "smooth"
-
-
 
     # the same as with layers, we put more bias on a list of random activations rather than a smooth activation choice
     activation_choice = choices(["uniform", "list"], weights=[0.3, 0.7])[0]
@@ -103,6 +98,7 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
         "OPTIMIZER": optimizer,
         "LEARNING_RATE": learning_rate,
         "MOMENTUM": momentum,
+        "REGULARIZATION": regularization,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activation,
         "DROPOUT": dropout,

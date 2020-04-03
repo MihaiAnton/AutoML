@@ -32,19 +32,22 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
     momentum = config.get("MOMENTUM")
     momentum = momentum + momentum * choice([-1, 1]) * random() * 0.2
 
-    momentum = max(0.00001, momentum)  # just be sure it does not get negative
+    momentum = max(0, momentum)  # just be sure it does not get negative
+
+    # regularization
+    regularization = config.get("REGULARIZATION")
+    regularization = regularization + regularization * choice([-1, 1]) * random() * 0.2
 
     # hidden layers
     layers = config.get("HIDDEN_LAYERS")
     if type(layers) is list:
         for i in range(len(layers)):
-            layer = layers[i] + choice([1, -1]) * layers[i] * random() * 0.1    # if the size of the layer is x, the new
+            if layers[i] == 1:
+                layer = 1
+            else:
+                layer = layers[i] + choice([1, -1]) * layers[i] * random() * 0.1    # if the size of the layer is x, the new
             layers[i] = int(layer)                                              # size is in [ 0.9*x , 1.1*x ]
 
-        # TODO remove later
-        for layer in layers:
-            if layer == 0:
-                raise Exception("!!!!! Critical exception (model_mutation.py): zero sized layer problem")
 
     # activations
     activations = config.get("ACTIVATIONS")
@@ -68,6 +71,7 @@ def deep_learning_mutation(model1: DeepLearningModel, in_size: int, out_size: in
         "OPTIMIZER": config.get("OPTIMIZER"),
         "LEARNING_RATE": learning_rate,
         "MOMENTUM": momentum,
+        "REGULARIZATION": regularization,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activations,
         "DROPOUT": dropout,

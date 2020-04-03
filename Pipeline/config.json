@@ -32,7 +32,7 @@
           "NOT_PROCESS": false,
           "OUTLIER_STDEV_FROM_MEAN": 4,
           "NORMALIZATION_METHOD": "z_score",
-          "POLYNOMIAL_FEATURES": 5
+          "POLYNOMIAL_FEATURES": 1
         },
         "TEXTUAL": {
           "WORD_DELIMITERS": "?!|/.,:;'-={}[]()",
@@ -69,6 +69,7 @@
       "OPTIMIZER" : "Adam",
       "LEARNING_RATE": 0.001,
       "MOMENTUM": 0.9,
+      "REGULARIZATION": 0.01,
       "HIDDEN_LAYERS": "smooth",
       "ACTIVATIONS": "sigmoid",
       "DROPOUT": 0.2,
@@ -104,15 +105,16 @@
 
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
-      "GENERAL_CRITERION": "",
+      "GENERAL_CRITERION": "MSE",
       "POPULATION_SIZE": 10,
-      "SEARCHING_TIME_SHARE": 0.5,
+      "SEARCHING_TIME_SHARE": 0.05,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {
         "OPTIMIZER_CHOICE" : ["Adam","SGD"],
-        "LEARNING_RATE_RANGE": [0.000001, 0.001],
+        "LEARNING_RATE_RANGE": [0.001, 0.01],
         "MOMENTUM_RANGE": [0,1],
-        "HIDDEN_LAYERS_CHOICES": ["smooth",[10,32,8]],
+        "REGULARIZATION_RANGE":[0,0.001],
+        "HIDDEN_LAYERS_CHOICES": ["smooth",[10,32,2]],
         "ACTIVATION_CHOICES": ["sigmoid","relu","linear"],
         "DROPOUT_RANGE": [0,1],
         "BATCH_SIZE_RANGE": [1,128]

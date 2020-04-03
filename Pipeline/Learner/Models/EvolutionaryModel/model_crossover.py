@@ -38,6 +38,12 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
     else:
         momentum = choice([config1.get("MOMENTUM"), config2.get("MOMENTUM")])
 
+    # regularization
+    if random() <= XO_PROBAB:
+        regularization = .5 * (config1.get("REGULARIZATION") + config2.get("REGULARIZATION"))
+    else:
+        regularization = choice([config1.get("REGULARIZATION"), config2.get("REGULARIZATION")])
+
     # hidden_layers
     if type(config1.get("HIDDEN_LAYERS")) != type(config2.get("HIDDEN_LAYERS")):
         layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
@@ -56,10 +62,6 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
                         layers[i] = config2.get("HIDDEN_LAYERS")[i]
                     else:
                         layers[i] = config1.get("HIDDEN_LAYERS")[i]
-            # TODO remove later
-            for layer in layers:
-                if layer == 0:
-                    raise Exception("!!!!! Critical exception (model_crossover.py): zero sized layer problem")
 
         else:
             layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
@@ -108,6 +110,7 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
         "OPTIMIZER": optimizer,
         "LEARNING_RATE": learning_rate,
         "MOMENTUM": momentum,
+        "REGULARIZATION": regularization,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activation,
         "DROPOUT": dropout,
