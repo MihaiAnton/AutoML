@@ -211,6 +211,9 @@ class AbstractModel(ABC):
         if task is REGRESSION and metric not in self.ACCEPTED_REGRESSION_METRICS:
             metric = "MSE"
 
+        if task is CLASSIFICATION and metric not in self.ACCEPTED_CLASSIFICATION_METRICS:
+            metric = "BCE"
+
         scorer = self.METRICS_TO_FUNCTION_MAP[metric]
 
         pred = self._model_predict(X, raw_output=True)
@@ -219,10 +222,13 @@ class AbstractModel(ABC):
         # y_true = Y.to_numpy()         # FIXME it seems like the scorer works with DataFrames
         # y_pred = pred.to_numpy()              # change if not working
         try:
-            labels = self.get_labels()
-            if len(labels) <= 1:
-                labels = None
-            score = scorer(Y, pred, labels=labels)
+            if task is CLASSIFICATION:
+                labels = self.get_labels()
+                if len(labels) <= 1:
+                    labels = None
+                score = scorer(Y, pred, labels=labels)
+            else:
+                score = scorer(Y, pred)
         except Exception as err:
             raise AbstractModelException("Could not score the results.")
         return score

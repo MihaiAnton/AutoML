@@ -1,7 +1,6 @@
 import json
 import os
 import time
-import warnings
 
 from pandas import DataFrame, concat
 

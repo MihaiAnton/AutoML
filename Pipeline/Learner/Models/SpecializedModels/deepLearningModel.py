@@ -19,9 +19,6 @@ from ..constants import AVAILABLE_TASKS, CLASSIFICATION
 
 
 
-WEIGHT_DECAY = 0 # TODO remove
-
-
 class ModuleList(object):
     """
         Pytorch implementation of dynamic attribute list
@@ -295,10 +292,8 @@ class DeepLearningModel(AbstractModel):
 
                 # version 2, checking it out
                 loss = criterion(output, batch_y)
-                if torch.isnan(loss).any().item():  # TODO remove
-                    print(1)
+
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self._model.parameters(), 5000)  # TODO!!!!! remove if does not work
                 optimizer.step()
                 optimizer.zero_grad()
 
@@ -558,38 +553,19 @@ class DeepLearningModel(AbstractModel):
 
             def forward(self, x):
                 # for each hidden layer: apply the weighted transformation, activate and dropout
-                x_copy = x  # TODO remove
 
-                if torch.isnan(x).any().item():  # TODO remove
-                    print(1)
 
                 for i in range(self._layer_count - 1):
                     x = self._layers[i](x)  # transform
 
-                    if torch.isnan(x).any().item():  # TODO remove
-                        print(1)
-
                     if i < len(self._activations):  # activate
                         x = self._activations[i](x)
-
-                    if torch.isnan(x).any().item():  # TODO remove
-                        print(1)
 
                     if i < len(self._dropouts):  # dropout
                         x = self._dropouts[i](x)
 
-                    if torch.isnan(x).any().item():  # TODO remove
-                        print(1)
-
                 x = self._layers[-1](x)
-
-                if torch.isnan(x).any().item():  # TODO remove
-                    print(1)
-
                 x = self._activations[-1](x)
-
-                if torch.isnan(x).any().item():  # TODO remove
-                    print(1)
 
                 return x
 
