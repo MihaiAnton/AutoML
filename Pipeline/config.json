@@ -59,7 +59,7 @@
   "TRAINING_CONFIG": {
     "TYPE": "default",
     "TASK": "classification",
-    "TIME": "2m",
+    "TIME": "10s",
     "PREDICTED_COLUMN_NAME": "",
 
     "DEFAULT_MODEL": "svm",
@@ -107,7 +107,7 @@
       "MODELS": ["neural_network"],
       "GENERAL_CRITERION": "MSE",
       "POPULATION_SIZE": 10,
-      "SEARCHING_TIME_SHARE": 0.05,
+      "SEARCHING_TIME_SHARE": 0.5,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {
         "OPTIMIZER_CHOICE" : ["Adam","SGD"],

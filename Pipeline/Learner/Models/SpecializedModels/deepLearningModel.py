@@ -18,7 +18,6 @@ from ..modelTypes import DEEP_LEARNING_MODEL
 from ..constants import AVAILABLE_TASKS, CLASSIFICATION
 
 
-
 class ModuleList(object):
     """
         Pytorch implementation of dynamic attribute list
