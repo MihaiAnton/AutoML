@@ -6,7 +6,7 @@
 
     "DATA_CLEANING": true,
     "DATA_CLEANING_CONFIG": {
-      "COLUMNS_TO_REMOVE": ["PassengerId"],
+      "COLUMNS_TO_REMOVE": ["Id"],
       "DO_NOT_REMOVE": [],
       "REMOVE_WHERE_Y_MISSING": true,
       "REMOVE_ROWS": true,
@@ -16,13 +16,13 @@
     },
 
 
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "PREDICTED_COLUMN_NAME": "",
 
 
     "FEATURE_ENGINEERING": true,
     "FEATURE_ENGINEERING_CONFIG": {
       "PROCESS_CATEGORICAL_PREDICTED_COLUMN": false,
-      "DO_NOT_PROCESS": ["PassengerId"],
+      "DO_NOT_PROCESS": [],
       "CONTINUOUS_FEATURES": [],
       "CATEGORICAL_FEATURES": [],
 
@@ -59,8 +59,8 @@
   "TRAINING_CONFIG": {
     "TYPE": "evolutionary",
     "TASK": "classification",
-    "TIME": "20m",
-    "PREDICTED_COLUMN_NAME": "Survived",
+    "TIME": "10m",
+    "PREDICTED_COLUMN_NAME": "",
 
     "DEFAULT_MODEL": "svm",
 
@@ -104,7 +104,7 @@
     "EVOLUTIONARY_MODEL_CONFIG": {
       "MODELS": ["neural_network"],
       "GENERAL_CRITERION": "accuracy",
-      "POPULATION_SIZE": 8,
+      "POPULATION_SIZE": 16,
       "SEARCHING_TIME_SHARE": 0.5,
 
       "NEURAL_NETWORK_EVOL_CONFIG": {
