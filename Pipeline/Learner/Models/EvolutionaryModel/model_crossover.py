@@ -38,6 +38,12 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
     else:
         momentum = choice([config1.get("MOMENTUM"), config2.get("MOMENTUM")])
 
+    # regularization
+    if random() <= XO_PROBAB:
+        regularization = .5 * (config1.get("REGULARIZATION") + config2.get("REGULARIZATION"))
+    else:
+        regularization = choice([config1.get("REGULARIZATION"), config2.get("REGULARIZATION")])
+
     # hidden_layers
     if type(config1.get("HIDDEN_LAYERS")) != type(config2.get("HIDDEN_LAYERS")):
         layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
@@ -56,6 +62,7 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
                         layers[i] = config2.get("HIDDEN_LAYERS")[i]
                     else:
                         layers[i] = config1.get("HIDDEN_LAYERS")[i]
+
         else:
             layers = choice([config1.get("HIDDEN_LAYERS"), config2.get("HIDDEN_LAYERS")])
 
@@ -78,6 +85,9 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
                         activation.append(config2.get("ACTIVATIONS")[i])
                     else:
                         activation.append(config1.get("ACTIVATIONS")[i])
+
+            if config1.get("ACTIVATIONS")[-1] == "sigmoid" and config2.get("ACTIVATIONS")[-1] == "sigmoid":
+                activation[-1] = "sigmoid"
         else:
             activation = choice([config1.get("ACTIVATIONS"), config2.get("ACTIVATIONS")])
 
@@ -89,14 +99,22 @@ def deep_learning_XO_deep_learning(model1: DeepLearningModel, model2: DeepLearni
     else:
         dropout = choice([config1.get("DROPOUT"), config2.get("DROPOUT")])
 
+    # batch_size
+    if random() <= XO_PROBAB:
+        batch_size = int(.5 * (config1.get("BATCH_SIZE") + config2.get("BATCH_SIZE")))
+    else:
+        batch_size = choice([config1.get("BATCH_SIZE"), config2.get("BATCH_SIZE")])
+
     offspring_config = {
         "CRITERION": config1.get("CRITERION", "undefined"),
         "OPTIMIZER": optimizer,
         "LEARNING_RATE": learning_rate,
         "MOMENTUM": momentum,
+        "REGULARIZATION": regularization,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activation,
-        "DROPOUT": dropout
+        "DROPOUT": dropout,
+        "BATCH_SIZE": batch_size
     }
 
     return DeepLearningModel(in_size, out_size, task, offspring_config)

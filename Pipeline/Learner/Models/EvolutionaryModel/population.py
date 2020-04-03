@@ -122,6 +122,11 @@ class Population:
                 worst_fitness = chromosome_fitness
                 worst_position = i
 
+        # delete the worst
+        to_delete = self._population[worst_position]
+        self._population[worst_position] = None
+        del to_delete
+
         # replace the worst
         if self._population[worst_position] == self._best_chromosome:  # we remove the current best
             self._best_chromosome = None
@@ -208,6 +213,13 @@ class Population:
         """
         return create_random_model(input_size, output_size, config, task)
 
+    def get_chromosomes(self) -> list:
+        """
+            Returns all the models in the population
+        :return: list of Chromosomes
+        """
+        return [chromosome for chromosome in self._population]
+
     @staticmethod
     def _is_fitter(actual_fitness: float, best_fitness: float) -> bool:
         """
@@ -216,9 +228,6 @@ class Population:
         :param best_fitness: float, the best score so far
         :return: bool
         """
-        if best_fitness is None or actual_fitness is None:
-            print(1)
-
         return actual_fitness < best_fitness  # important: the general problem is considered
         # to be a minimization problem, thus a lower fitness is better
 

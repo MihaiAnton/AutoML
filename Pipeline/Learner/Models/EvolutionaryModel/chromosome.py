@@ -36,7 +36,7 @@ class Chromosome:
         """
         model = self.get_model()
         model.train(X, Y, train_time=time, validation_split=validation_split, verbose=False)
-        score = self._genotype.eval(X, Y, task, criterion)
+        score = self._genotype.eval(X, Y, task, criterion, include_train_stats=True)
         self._phenotype = score
         return score
 

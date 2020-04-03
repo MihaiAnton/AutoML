@@ -1,8 +1,10 @@
+import warnings
+from random import randrange
 from pandas import DataFrame
 import time
+from sklearn.model_selection import train_test_split
 
 from ..abstractModel import AbstractModel
-
 from ....Exceptions import EvolutionaryModelException
 from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
@@ -26,6 +28,8 @@ class EvolutionaryModel(AbstractModel):
         :param task: the task to be done (REGRESSION / CLASSIFICATION)
         :param predicted_name: the name of the attribute to be predicted to be predicted
         """
+        AbstractModel.__init__(self)
+
         if config is None:
             config = {}
 
@@ -68,8 +72,8 @@ class EvolutionaryModel(AbstractModel):
         population = Population(in_size, out_size, task, population_size, config)
         return population
 
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
-              validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
+                     validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
                 Trains the model with the data provided.
             :param validation_split: percentage of the data to be used in validation; None if validation should not be used
@@ -93,6 +97,21 @@ class EvolutionaryModel(AbstractModel):
         # get the training time parameters
         search_time = self._config.get("SEARCHING_TIME_SHARE", 0.5) * train_time  # search for models
 
+        # set up the train test split logic: train the models using a dataset and evaluate them using a validation one
+        if validation_split is None:
+            x_train = X
+            x_val = X
+            y_train = Y
+            y_val = Y
+        else:
+            if type(validation_split) != float:
+                validation_split = 0.2
+            validation_split = max(validation_split, 0.1)
+            validation_split = min(validation_split, 0.9)
+
+            x_train, x_val, y_train, y_val = train_test_split(X, Y, test_size=validation_split,
+                                                              random_state=randrange(2048))
+
         # set up time tracking
         start_time = time.time()
         search_final = start_time + search_time
@@ -107,8 +126,21 @@ class EvolutionaryModel(AbstractModel):
         model_eval_time = search_time / (self._config.get("POPULATION_SIZE", 10) * 10)
 
         print("Evaluating population...") if verbose else None
-        self._population.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
-                              validation_split=validation_split)
+        self._population.eval(x_train, y_train, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
+                              validation_split=None)
+
+        # add population models to statistics
+        self._models_tried = [
+            {
+                "MODEL_SUMMARY": chromosome.get_model().summary(),
+                "DESCRIPTION": str(chromosome.get_model()),
+                "SCORE": chromosome.get_fitness()
+            }
+            for chromosome in self._population.get_chromosomes()
+        ]
+
+
+
         # searches for the best model
         print("Searching for the best model...") if verbose else None
         while keep_searching:
@@ -125,16 +157,29 @@ class EvolutionaryModel(AbstractModel):
             offspring_m = self._population.mutation(offspring)  # perform a mutation
 
             # evaluate the result
-            offspring_m.eval(X, Y, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
-                             validation_split=validation_split)
+            offspring_m.eval(x_train, y_train, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
+                             validation_split=None)
 
             # add it in the population
             self._population.replace(offspring_m)
 
             # update the best model
             population_best = self._population.get_best()
-            self._best_model = population_best.get_model()
-            self._model_score = population_best.get_fitness()
+            if self._best_model is None or self._model_score > population_best.get_fitness():
+                self._best_model = population_best.get_model()
+                self._model_score = population_best.get_fitness()
+                self._epoch_bests.append({
+                    "MODEL_SUMMARY": self._best_model.summary(),
+                    "DESCRIPTION": str(self._best_model),
+                    "SCORE": self._model_score
+                })
+
+            # gather statistics
+            self._models_tried.append({
+                "MODEL_SUMMARY": offspring_m.get_model().summary(),
+                "DESCRIPTION": str(offspring_m.get_model()),
+                "SCORE": offspring_m.get_fitness()
+            })
 
             # epoch end: gather time data
             epoch_end = time.time()
@@ -146,28 +191,35 @@ class EvolutionaryModel(AbstractModel):
                 keep_searching = True  # train one more epoch
 
             # output epoch details
-            print("Epoch {:3d} -  Best Score: {:.5f} | Search time: {:.2f} seconds".format(
-                epochs, population_best.get_fitness(), epoch_duration)) if verbose else None
+            validation_data = ""
+            if validation_split is not None:
+                validation_data = " Validation Score: {:.5f} |".format(
+                    self._best_model.eval(x_val, y_val, self._task, self._config.get("GENERAL_CRITERION"))
+                )
+
+            print("Epoch {:3d} -  Best Score: {:.5f} |{} Search time: {:.2f} seconds".format(
+                epochs, population_best.get_fitness(), validation_data, epoch_duration)) if verbose else None
 
         # training the best model
         print("Training the best model...") if verbose else None
         self._model = self._population.get_best().get_model()
-        best_model_time = int(train_time - (time.time()-start_time))  # the amount of seconds remaining
-        self._model.train(X, Y, train_time=best_model_time, verbose=verbose)
+        best_model_time = int(train_time - (time.time() - start_time))  # the amount of seconds remaining
+        self._model.train(X, Y, train_time=best_model_time, verbose=verbose, validation_split=validation_split)
 
         # return the trained best model
         return self._model
 
-    def predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
-                Predicts the output of X based on previous learning
-            :param X: DataFrame; the X values to be predicted into some Y Value
-            :return: DataFrame with the predicted data
+            Predicts the output of X based on previous learning
+        :param X: DataFrame; the X values to be predicted into some Y Value
+        :param raw_output: returns the exact output of the model, without rebasing into the initial classes
+        :return: DataFrame with the predicted data
         """
         if self._model is None:
             raise EvolutionaryModelException("Train the model before performing a prediction.")
 
-        return self._model.predict(X)
+        return self._model.predict(X, raw_output=raw_output)
 
     def to_dict(self) -> dict:
         """
@@ -202,13 +254,26 @@ class EvolutionaryModel(AbstractModel):
             Returns a dictionary with statistics about training.
             "EPOCHS_BESTS" and "MODELS_TRIED" contain list with dictionaries of form:
                     {
+                        "MODEL_SUMMARY": model summary, computed with the summary() method,
                         "DESCRIPTION": model description,
                         "SCORE": model score
                     }
         :return: dictionary with statistics
         """
-        return {
+        metadata = {}
+
+        train_data = {
             "EPOCH_BESTS": self._epoch_bests,
-            "BEST_MODEL": self._best_model,
+            "BEST_MODEL": self._best_model.summary(),
             "MODELS_TRIED": self._models_tried
         }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
+        }
+
+    def get_labels(self) -> list:
+        warnings.warn("Method get_labels is not available for EvolutionaryModel")
+        return []

@@ -45,7 +45,6 @@ class ModelFactory:
         else:
             raise ModelSelectionException("could not create model of type {}".format(requested_type))
 
-
     def _create_default_model(self, in_size, out_size):
         """
             Creates a default model which is expected to receive in_size variables and predict out_size variables
@@ -73,13 +72,13 @@ class ModelFactory:
 
     def _create_evolutionary_model(self, in_size, out_size):
         """
-            Creates an evolutionary model which is expected to find the best possible model which receives in_size variables
-        and predicts out_size variables.
+        Creates an evolutionary model which is expected to find the best possible model which receives in_size
+        variables and predicts out_size variables.
 
         :param in_size: the size of the input
         :param out_size: the size of the desired output
         :return: the initial model (untrained)
         """
 
-        return EvolutionaryModel(in_size, out_size, task=self._task, config=self._config.get("EVOLUTIONARY_MODEL_CONFIG", {}))
-
+        return EvolutionaryModel(in_size, out_size, task=self._task,
+                                 config=self._config.get("EVOLUTIONARY_MODEL_CONFIG", {}))

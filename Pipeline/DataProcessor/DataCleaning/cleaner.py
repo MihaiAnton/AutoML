@@ -23,9 +23,10 @@ class Cleaner:
         self._config = config
         self._mapper = Mapper("Cleaner")
 
-    def clean(self, data: DataFrame, mapper: 'Mapper', predicted_col: str = None) -> DataFrame:
+    def clean(self, data: DataFrame, mapper: 'Mapper', predicted_col: str = None, verbose: bool = True) -> DataFrame:
         """
             Cleans the data by removing rows/columns where necessary.
+        :param verbose: defines whether or not the clean() method will print output to stdout
         :param predicted_col: which is the column name that we want to predict
         :param data: the raw data that needs to be cleaned
         :param mapper: the mapper class that saves all the changes
@@ -49,11 +50,11 @@ class Cleaner:
         if self._config.get('REMOVE_ROWS', False):
             column_count = len(data.columns)
             remove_threshold = float(self._config.get('ROW_REMOVAL_THRESHOLD', 1))
-            data = data[data.isna().sum(
-                axis=1) <= column_count - remove_threshold * column_count]  # filter out the ones that have too many missing values
+            data = data[data.isna().sum(axis=1) <= column_count - remove_threshold * column_count]
+                                            # filter out the ones that have too many missing values
 
         if self._config.get('REMOVE_COLUMNS', False):
-            row_count = len(data.index)
+            row_count = len(data)
             remove_threshold = float(self._config.get('COLUMN_REMOVAL_THRESHOLD', 1))
             cols_to_drop_null = data.columns[data.isna().sum() >= row_count * remove_threshold].tolist()
             cols_to_drop_null_valid = []

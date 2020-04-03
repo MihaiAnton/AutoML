@@ -56,6 +56,7 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     optimizer = choice(config.get("OPTIMIZER_CHOICE", ["Adam", "SGD"]))
     learning_rate = uniform(*config.get("LEARNING_RATE_RANGE", [0.000001, 1]))
     momentum = uniform(*config.get("MOMENTUM_RANGE", [0, 1]))
+    regularization = uniform(*config.get("REGULARIZATION_RANGE", [0, 0.01]))
     # in the layer choices, the random choice is more biased towards creating a custom weight range.
     # since using smooth all over the place could be too mainstream
     layer_choice = choices(config.get("HIDDEN_LAYERS_CHOICES", ["smooth", [10, 128, 6]]), weights=[0.1, 0.9])[0]
@@ -68,7 +69,7 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
     # the same as with layers, we put more bias on a list of random activations rather than a smooth activation choice
     activation_choice = choices(["uniform", "list"], weights=[0.3, 0.7])[0]
     if activation_choice == "uniform" or layers == "smooth":
-        activation = choice(choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"])))
+        activation = choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"]))
     else:
         activation = [choice(config.get("ACTIVATION_CHOICES", ["sigmoid", "relu", "linear"]))
                       for _ in range(len(layers) + 1)]
@@ -89,14 +90,19 @@ def create_deep_learning_model(in_size: int, out_size: int, config: dict, task: 
 
         dropout = [uniform(*config.get("DROPOUT_RANGE", [0, 0.6])) for _ in range(desired_len)]
 
+    # batch size
+    batch_size = randint(*config.get("BATCH_SIZE_RANGE", [1, 128]))
+
     model_config = {
         "CRITERION": criterion,
         "OPTIMIZER": optimizer,
         "LEARNING_RATE": learning_rate,
         "MOMENTUM": momentum,
+        "REGULARIZATION": regularization,
         "HIDDEN_LAYERS": layers,
         "ACTIVATIONS": activation,
-        "DROPOUT": dropout
+        "DROPOUT": dropout,
+        "BATCH_SIZE": batch_size
     }
 
     # create the model with the previously created dictionary

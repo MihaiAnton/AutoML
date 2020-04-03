@@ -1,10 +1,12 @@
 import pickle
 import warnings
+import math
 
+import torch
 from pandas import DataFrame
 
 from ..abstractModel import AbstractModel
-from torch import nn, optim, tensor
+from torch import nn, optim, tensor, autograd
 from ....Exceptions.learnerException import DeepLearningModelException
 from sklearn.model_selection import train_test_split
 from random import randrange
@@ -63,6 +65,7 @@ class DeepLearningModel(AbstractModel):
     DEFAULT_LR = 0.01
     DEFAULT_MOMENTUM = 0.4
     DEFAULT_CRITERION = "MSE"
+    DEFAULT_REGULARIZATION = 0.01
     TEMPORARY_FILE = ".tmp_model_file"
 
     def __init__(self, in_size, out_size, task: str = "", config: dict = None, predicted_name: list = None,
@@ -74,6 +77,8 @@ class DeepLearningModel(AbstractModel):
             :param config: the configuration map (expected to get the NEURAL_NETWORK_CONFIG part of the default model)
             :param task: the type of learning that is wanted to be done
         """
+        AbstractModel.__init__(self)
+
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
@@ -104,10 +109,14 @@ class DeepLearningModel(AbstractModel):
         # training metrics useful for evaluation
         self._epoch_loss_train = []  # for each epoch the loss is collected in this array
 
-    def predict(self, X: DataFrame) -> DataFrame:
+        # classification labels
+        self._classification_labels = []
+
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
             Predicts a set of data transformed to fit to the model's input expectation
         :param X: dataset to predict
+        :param raw_output: returns the exact output of the model, without rebasing into the initial classes
         :return: DataFrame with the output
         """
         if self._train_mode:
@@ -116,14 +125,24 @@ class DeepLearningModel(AbstractModel):
 
         processed = tensor(X.to_numpy()).float()
         output = self._model(processed)
+        del processed
 
         numpy_array = np.asarray(output.detach())
+        del output
 
         df = pd.DataFrame(numpy_array, columns=self._predicted_name)
-        df.fillna(0, inplace=True)  # TODO find better alternative
-                                    # was added just in case a value is nan
+        del numpy_array
 
-        if self._task == CLASSIFICATION:
+        if df.isna().any().any():
+            # TODO add to log file
+            pass
+            # raise DeepLearningModelException("NaN values encountered in DeepLearningModel._predict().")
+
+        df.fillna(0, inplace=True)  # TODO find better alternative - this is the quick fix to a deeper problem
+                                    # when doing los.backward() or forward() in the network, nans are produced
+        # was added just in case a value is nan
+
+        if self._task == CLASSIFICATION and raw_output is False:
             mapping = self._classification_mapping["mapping"]
             df_mapped = self._from_categorical(df, mapping)
             df = df_mapped
@@ -131,8 +150,8 @@ class DeepLearningModel(AbstractModel):
         return df
 
     # noinspection DuplicatedCode
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
-              callbacks: list = None, verbose: bool = True):
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, validation_split: float = 0.2,
+                     callbacks: list = None, verbose: bool = True):
         """
             Trains the model according to the specifications provided.
         :param callbacks: a list of predefined callbacks that get called at every epoch
@@ -153,6 +172,8 @@ class DeepLearningModel(AbstractModel):
 
         # if the task is classification - modify the Y column and create a mapping between actual columns and encodings
         if self._task == CLASSIFICATION:
+            predicted_y = list(Y.columns)[0]
+            self._classification_labels = list(Y[predicted_y].unique())
             self._classification_mapping["mapping"] = self._categorical_mapping(Y)
             self._classification_mapping["previous_out_layers"] = self._output_count
             self._classification_mapping["previous_predicted_names"] = self._predicted_name
@@ -181,20 +202,24 @@ class DeepLearningModel(AbstractModel):
             criterion = nn.BCELoss()
         else:
             criterion = nn.MSELoss()
+        del requested_criterion
 
         requested_optimizer = self._config.get("OPTIMIZER", self.DEFAULT_OPTIMIZER)
         requested_lr = self._config.get("LEARNING_RATE", self.DEFAULT_LR)
         requested_momentum = self._config.get("MOMENTUM", self.DEFAULT_MOMENTUM)
+        requested_regularization = self._config.get("REGULARIZATION", self.DEFAULT_REGULARIZATION)
 
         params = self._model.parameters()
         if requested_optimizer == "SGD":
-            optimizer = optim.SGD(params, lr=requested_lr, momentum=requested_momentum)
+            optimizer = optim.SGD(params, lr=requested_lr, momentum=requested_momentum,
+                                  weight_decay=requested_regularization)
         elif requested_optimizer == "Adam":
-            optimizer = optim.Adam(params, lr=requested_lr)
+            optimizer = optim.Adam(params, lr=requested_lr, weight_decay=requested_regularization)
         else:
             raise DeepLearningModelException("Optimizer {} not understood.".format(requested_optimizer))
 
         self._optimizer = optimizer
+        del requested_optimizer
         batch_size = self._config.get("BATCH_SIZE", self.DEFAULT_BATCH_SIZE)
 
         # create the train and validation data sets
@@ -233,7 +258,6 @@ class DeepLearningModel(AbstractModel):
 
         # train the model
         self._model.zero_grad()
-
         while keep_training:
             keep_training = False
 
@@ -248,19 +272,29 @@ class DeepLearningModel(AbstractModel):
                 batch_x = x_train[start_index:start_index + batch_size]
                 batch_y = y_train[start_index:start_index + batch_size]
 
-                optimizer.zero_grad()
+
+                self._model.eval()
                 output = self._model(batch_x)
+                self._model.train()
+                del batch_x
 
-                losses = []
-                for out in range(len(self._predicted_name)):
-                    losses.append(criterion(output[:, out], batch_y[:, out]))
+                # TODO check to see if the loss can work without being explicitly summed over all columns
+                # version 1, might cause nan errors
+                # losses = []
+                # for out in range(len(self._predicted_name)):
+                #     losses.append(criterion(output[:, out], batch_y[:, out]))
+                # del output
+                #
+                # loss = losses[0]
+                # for i in range(1, len(losses)):
+                #     loss = loss + losses[i]
 
-                loss = losses[0]
-                for i in range(1, len(losses)):
-                    loss = loss + losses[i]
+                # version 2, checking it out
+                loss = criterion(output, batch_y)
 
                 loss.backward()
                 optimizer.step()
+                optimizer.zero_grad()
 
                 running_loss += loss.item()
                 start_index += batch_size
@@ -331,40 +365,52 @@ class DeepLearningModel(AbstractModel):
 
         return self
 
-    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str):
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str, include_train_stats: bool = False):
         """
             Returns the eval function for the base class adding other metrics to it like convergence rate,
         plateau regions and non-descending loss sections.
+       :param task: the task of the model (REGRESSION / CLASSIFICATION)
+        :param X: the input dataset
+        :param Y: the dataset to compare the prediction to
+        :param metric: the metric used
+        :param include_train_stats: decides whether to include the last training's stats or not
         """
         base_loss = AbstractModel.eval(self, X, Y, task, metric)
         final_loss = base_loss
 
-        loss_diff = [self._epoch_loss_train[i-1] - self._epoch_loss_train[i]
-                     for i in range(len(self._epoch_loss_train)-1)]
+        if include_train_stats is False:
+            return final_loss
+
+        loss_diff = [self._epoch_loss_train[i - 1] - self._epoch_loss_train[i]
+                     for i in range(len(self._epoch_loss_train) - 1)]
 
         # based on the list of losses per epoch, consider the following metrics
         # overall drop in loss - from the first epoch to the last
-        drop = self._epoch_loss_train[0] - self._epoch_loss_train[-1]   # the higher the drop the better
+        drop = self._epoch_loss_train[0] - self._epoch_loss_train[-1]  # the higher the drop the better
         if drop == 0:
             drop = 0.1
-        final_loss += base_loss * abs((1/drop))                         # the lower the drop, the more the loss will increase
+        final_loss += base_loss * abs((1 / drop))  # the lower the drop, the more the loss will increase
 
         # of all consecutive epoch pairs, how many, as percentage, had positive loss change
         positive_drops = 0
         for diff in loss_diff:
             if diff > 0:
                 positive_drops += 1
-
-        final_loss += base_loss * (positive_drops/len(loss_diff))
+        if len(loss_diff) > 0:
+            final_loss += base_loss * (positive_drops / len(loss_diff))
 
         # compute the standard deviation of loss changes: the lower the better
         # (we want a steady decrease rather than a stepped one)
-        mean_val = np.mean(loss_diff)
+        if len(loss_diff) > 0:
+            mean_val = np.mean(loss_diff)
 
-        if mean_val < 0.1:
-            mean_val = 0.1
+            if mean_val < 0.1:
+                mean_val = 0.1
 
-        final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
+            final_loss += base_loss * abs(np.std(loss_diff) / mean_val)
+
+        if math.isnan(final_loss):
+            final_loss = np.inf
 
         return final_loss
 
@@ -438,6 +484,7 @@ class DeepLearningModel(AbstractModel):
                             "Not able to use activation function {}".format(activation_requested))
                 activations = activation_requested + [activation_requested[-1]] * (
                         len(hidden_layers) + 1 - len(activation_requested))
+
         self._activations = activations
 
         # dropout
@@ -451,6 +498,7 @@ class DeepLearningModel(AbstractModel):
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
             dropouts = dropout_requested[:(len(hidden_layers))]
+            dropouts = dropouts + [0]*(len(hidden_layers)-len(dropouts))
         self._dropouts = dropouts
 
         # create the network class
@@ -476,6 +524,7 @@ class DeepLearningModel(AbstractModel):
                 prev_size = input_layer_size
                 for i in range(len(hidden_layers)):
                     layer = nn.Linear(prev_size, hidden_layers[i])
+
                     prev_size = hidden_layers[i]
                     self._layers.append(layer)
                     self._layer_count += 1
@@ -503,6 +552,8 @@ class DeepLearningModel(AbstractModel):
 
             def forward(self, x):
                 # for each hidden layer: apply the weighted transformation, activate and dropout
+
+
                 for i in range(self._layer_count - 1):
                     x = self._layers[i](x)  # transform
 
@@ -608,3 +659,28 @@ class DeepLearningModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
+
+    def summary(self) -> dict:
+        """
+            Returns summary about the deep learning model
+        :return: dictionary with summary
+        """
+        # TODO maybe more info to be added
+        metadata = {
+            "LAYERS": self._layers,
+            "ACTIVATIONS": self._activations,
+            "DROPOUTS": self._dropouts
+        }
+
+        train_data = {
+            "EPOCH_LOSS_TRAIN": self._epoch_loss_train
+        }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
+        }
+
+    def get_labels(self) -> list:
+        return self._classification_labels

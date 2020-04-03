@@ -36,10 +36,11 @@ class Engineer:
         # loading libraries for natural language processing
         self._nlp = spacy.load('en', disable=['parser', 'ner'])
 
-    def process(self, data: DataFrame, mapper: 'Mapper', column_type: dict = None) -> DataFrame:
+    def process(self, data: DataFrame, mapper: 'Mapper', column_type: dict = None, verbose: bool = True) -> DataFrame:
         """
             Processes the dataset in a way that a learning algorithms can benefit more from it.
             Does outlier detection, feature engineering, data normalization/standardization, missing value filling, polynomial features and more.
+        :param verbose: defines if the process() method will print output to stdout
         :param data: DataFrame consisting of the data
         :param mapper: parent mapper that keeps track of changes
         :param column_type: describes whether features are continuous or discrete in form of a dictionary
@@ -56,13 +57,14 @@ class Engineer:
         not_processed = []
 
         for column in data.columns:
-            print("Engineer: process column {}.".format(column))
+
             dtype = data_types[column]
 
             if column in self._config.get("DO_NOT_PROCESS", []):
                 interm_data = data[[column]]
                 not_processed.append(column)
             else:
+                print("Engineer: process column {}.".format(column)) if verbose else None
                 if str(dtype) in self._numeric_dtypes:
                     col_type = column_type.get(column, 'undefined')
                     interm_data = self._process_numeric(data.loc[:, [column]], column, col_type)
@@ -175,7 +177,14 @@ class Engineer:
             column_meta_data['normalization_mean'] = mean
             column_meta_data['normalization_std'] = std
 
-            data = (data - mean) / std
+            any_std_0 = False
+            for s in std:
+                if s == 0:
+                    any_std_0 = True
+                    break
+
+            if any_std_0 is False:
+                data = (data - mean) / std
         else:
             column_meta_data['normalization_method'] = 'none'
 
@@ -387,9 +396,10 @@ class Engineer:
     """""""""""""""""""""""""""""""""""""""""""""   Conversion methods    """""""""""""""""""""""""""""""""""""""""""""
 
     @staticmethod
-    def convert(data: DataFrame, mapper: 'Mapper') -> DataFrame:
+    def convert(data: DataFrame, mapper: 'Mapper', verbose: bool = True) -> DataFrame:
         """
             Converts new data to a format previously mapped into 'mapper'
+        :param verbose: decides if the convert() method will produce any output
         :param data: DataFrame with data to be transformed
         :param mapper: Mapper class containing the rules for transformation.
         :return: converted data in form of DataFrame
@@ -399,11 +409,12 @@ class Engineer:
         processed_data = DataFrame()
 
         for column in data.columns:
-            print("Engineer: convert column {}.".format(column))
+
             interm_data = None
             if column in mapper.get("NOT_PROCESSED", []):
                 interm_data = data[[column]]
             else:
+                print("Engineer: convert column {}.".format(column)) if verbose else None
                 column_data = mapper.get(column, None)
                 if column_data is None:
                     raise DataEngineeringException(
@@ -435,7 +446,6 @@ class Engineer:
             if info.get("method") == "one_hot_encode":
                 new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=info.get("onehotencoded_names"))
                 for i, r in data[[info.get("name")]].iterrows():
-                    # print(str(info.get("name") + "_" + str(r[0])))
                     if str(info.get("name") + "_" + str(r[0])) in new_data.columns:
                         new_data.iloc[i][str(info.get("name") + "_" + str(r[0]))] = 1
 
@@ -474,7 +484,6 @@ class Engineer:
             if info.get("method") == "one_hot_encode":
                 new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=info.get("onehotencoded_names"))
                 for i, r in data[[info.get("name")]].iterrows():
-                    # print(str(info.get("name") + "_" + str(r[0])))
                     if str(info.get("name") + "_" + str(r[0])) in new_data.columns:
                         new_data.iloc[i][str(info.get("name") + "_" + str(r[0]))] = 1
 

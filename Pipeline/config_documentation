@@ -98,6 +98,7 @@
                                                         \_ one for every layer
                                                          \_list of activation for each layer
       "DROPOUT": 0.1                            ---> positive float or list of floats - the general dropout used or dropout for each layer
+      "BATCH_SIZE": 64                          ---> specifies the batch size of the neural network
     },
 
     "RANDOM_FOREST_CONFIG": {                   ---> if DEFAULT_MODEL is "random_forest", provide this object
@@ -141,9 +142,8 @@
                                                                             wither as a vector like [min_layer_size, max_layer_size, max_layers]
         "ACTIVATION_CHOICES": ["sigmoid","relu","linear"],  ---> the choices for the activation functions
         "DROPOUT_RANGE": [0,1]                              ---> the range for the random dropout
+        "BATCH_SIZE_RANGE": [1,128]                         ---> the range for the batch size - list like [min_possible_batch_size, max_possible_batch_size]
       }
-    }
-
     }
   }
 }

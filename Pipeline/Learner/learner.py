@@ -1,5 +1,3 @@
-import warnings
-
 from ..Mapper import Mapper
 from pandas import DataFrame
 from .Models import AbstractModel
@@ -36,27 +34,20 @@ class Learner:
         self._model_factory = ModelFactory(self._config)
         self._model = model
 
-    def learn(self, X: DataFrame, Y: DataFrame, input_size: int = None, output_size: int = None) -> AbstractModel:
+    def learn(self, X: DataFrame, Y: DataFrame, verbose: bool = True) \
+            -> AbstractModel:
         """
             Learns based on the configuration provided.
-        :return: learnt model and statistics
-        """
-        # parameter validation
-        if type(input_size) is int:
-            if input_size != X.shape[1]:
-                warnings.warn("Learner: input_size does not match the actual size of X.", RuntimeWarning)
-                input_size = X.shape[1]
+        :param X: the data to learn from
+        :param Y: the predictions to compare to
 
-        if type(output_size) is int:
-            if output_size != Y.shape[1]:
-                warnings.warn("Learner: output_size does not match the actual size of Y.", RuntimeWarning)
-                output_size = Y.shape[1]
+        :param verbose: decides whether the learn() method should produce any output
+        :return: the trained model
+        """
 
         # input and output size
-        if input_size is None:
-            input_size = X.shape[1]
-        if output_size is None:
-            output_size = Y.shape[1]
+        input_size = X.shape[1]
+        output_size = Y.shape[1]
 
         self._mapper.set("input_size", input_size)
         self._mapper.set("output_size", output_size)
@@ -68,7 +59,9 @@ class Learner:
 
         # trains the model
         train_time = self._convert_train_time(self._config.get("TIME", "10m"))
-        model.train(X, Y, train_time)
+
+        # here's where the magic happens
+        model.train(X, Y, train_time, verbose=verbose)
 
         # returns it
         self._model = model

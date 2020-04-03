@@ -25,6 +25,8 @@ class SvmModel(AbstractModel):
         :param predicted_name: the name of the the predicted column
         :param dictionary: the mapping of data (previously returned by to_dict
         """
+        AbstractModel.__init__(self)
+
         if type(dictionary) is dict:  # for internal use;
             self._init_from_dictionary(dictionary)  # load from a dictionary when loading from file the model
             return
@@ -44,8 +46,12 @@ class SvmModel(AbstractModel):
         self._kernel = None
         self._regularization = None
 
+        # summary data
+        self._train_criterion = None
+        self._val_criterion = None
+
     # noinspection DuplicatedCode
-    def train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
+    def _model_train(self, X: DataFrame, Y: DataFrame, train_time: int = 600, callbacks: list = None,
               validation_split: float = 0.2, verbose: bool = True) -> 'AbstractModel':
         """
             Trains the model with the data provided.
@@ -101,17 +107,21 @@ class SvmModel(AbstractModel):
         if not (validation_split is None):
             criterion_train = self._model.score(x_train, y_train)
             criterion_val = self._model.score(x_val, y_val)
+            self._train_criterion = criterion_train
+            self._val_criterion = criterion_val
 
             print("Training finished - Training {}: {} - Validation {}: {}"
                   .format(loss_name, criterion_train, loss_name, criterion_val)) if verbose else None
         else:
             criterion_train = self._model.score(x_train, y_train)
+            self._train_criterion = criterion_train
             print("Training finished - Training {}: {}".format(loss_name, criterion_train)) if verbose else None
 
-    def predict(self, X: DataFrame) -> DataFrame:
+    def _model_predict(self, X: DataFrame, raw_output: bool = False) -> DataFrame:
         """
                 Predicts the output of X based on previous learning
             :param X: DataFrame; the X values to be predicted into some Y Value
+            :param raw_output: returns the exact output of the model, without rebasing into the initial classes
             :return: DataFrame with the predicted data
         """
         if self._model is None:
@@ -148,7 +158,9 @@ class SvmModel(AbstractModel):
                 "TASK": self._task,
                 "CONFIGURED": self._configured,
                 "KERNEL": self._kernel,
-                "REGULARIZATION": self._regularization
+                "REGULARIZATION": self._regularization,
+                "TRAIN_CRIT": self._train_criterion,
+                "VAL_CRIT": self._val_criterion
             }
         }
 
@@ -176,6 +188,8 @@ class SvmModel(AbstractModel):
         self._configured = mdata.get("CONFIGURED")
         self._kernel = mdata.get("KERNEL")
         self._regularization = mdata.get("REGULARIZATION")
+        self._train_criterion = mdata.get("TRAIN_CRIT")
+        self._val_criterion = mdata.get("VAL_CRIT")
 
         # init the model
         self._model = pickle.loads(model)
@@ -235,3 +249,39 @@ class SvmModel(AbstractModel):
 
     def get_config(self) -> dict:
         return self._config
+
+    def summary(self) -> dict:
+        """
+            Returns summary about the deep learning model
+        :return: dictionary with summary
+        """
+        metadata = {
+            "REGULARIZATION": self._config.get("REGULARIZATION_C", 1.0),
+            "KERNEL": self._config.get("KERNEL", "rbf")
+        }
+
+        train_data = {
+            "VALIDATION_CRITERION": self._val_criterion,
+            "TRAIN_CRITERION": self._train_criterion
+        }
+
+        return {
+            "MODEL_TYPE": self.model_type(),
+            "METADATA": metadata,
+            "TRAIN_DATA": train_data
+        }
+
+    def eval(self, X: DataFrame, Y: DataFrame, task: str, metric: str, include_train_stats: bool = False):
+        """
+            Not available for this type of model. Throws warning and returns 0.
+        :param X:
+        :param Y:
+        :param task:
+        :param metric:
+        :param include_train_stats:
+        :return: 0
+        """
+        warnings.warn("Method eval() of AbstractModel not available for SvmModel.", RuntimeWarning)
+
+        return 0
+

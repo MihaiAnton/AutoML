@@ -1,8 +1,11 @@
 from unittest import TestCase
+import os
+import shutil
+
 from Pipeline.Mapper import Mapper
 
-class TestMapper(TestCase):
 
+class TestMapper(TestCase):
 
     def setUp(self) -> None:
         self._mapper = Mapper("m1")
@@ -11,6 +14,12 @@ class TestMapper(TestCase):
         self._rec_mapper.set("a", "b")
         self._rec_mapper.set("l", [1,2,3])
 
+        if not os.path.exists("./.tmp_test_mapper_files"):
+            os.mkdir("./.tmp_test_mapper_files")
+
+    def tearDown(self) -> None:
+        if os.path.exists("./.tmp_test_mapper_files"):
+            shutil.rmtree("./.tmp_test_mapper_files")
 
     def test_get_name(self):
         self.assertEqual(self._mapper.get_name(), "m1")
@@ -56,9 +65,12 @@ class TestMapper(TestCase):
         self.assertEqual(self._mapper.get_mapper("m2").get_map(), self._rec_mapper.get_map())
 
     def test__init_from_file(self):
-        # TODO
-        pass
+        self._rec_mapper.save_to_file("./.tmp_test_mapper_files/mapper")
+        mapper = Mapper("name", file="./.tmp_test_mapper_files/mapper")
+        self.assertEqual(sorted(list(mapper.get_map().keys())), sorted(list(self._rec_mapper.get_map().keys())))
+
 
     def test_save_to_file(self):
-        # TODO
-        pass
+        self._rec_mapper.save_to_file("./.tmp_test_mapper_files/mapper")
+        self.assertTrue(os.path.exists("./.tmp_test_mapper_files/mapper"))
+
