@@ -4,3 +4,5 @@
 """
 
 from .abstractCallback import AbstractCallback
+
+from .SpecializedCallbacks import *

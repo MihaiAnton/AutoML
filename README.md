@@ -6,3 +6,6 @@ An automated Machine Learning pipeline for faster Data Science projects
     * Complete Machine Learning flow for small projects.
     * Productivity tool for Data Scientists to figure out which model configurations work and which not.
     
+    
+For usage examples check out the [examples file](Pipeline/examples.py).
+

@@ -34,16 +34,19 @@ class Learner:
         self._model_factory = ModelFactory(self._config)
         self._model = model
 
-    def learn(self, X: DataFrame, Y: DataFrame, verbose: bool = True) \
+    def learn(self, X: DataFrame, Y: DataFrame, verbose: bool = True, callbacks:list=None) \
             -> AbstractModel:
         """
             Learns based on the configuration provided.
+        :param callbacks: callbacks to be executed by the model when training it
         :param X: the data to learn from
         :param Y: the predictions to compare to
 
         :param verbose: decides whether the learn() method should produce any output
         :return: the trained model
         """
+        if callbacks is None:
+            callbacks = []
 
         # input and output size
         input_size = X.shape[1]
@@ -61,7 +64,7 @@ class Learner:
         train_time = self._convert_train_time(self._config.get("TIME", "10m"))
 
         # here's where the magic happens
-        model.train(X, Y, train_time, verbose=verbose)
+        model.train(X, Y, train_time, verbose=verbose, callbacks=callbacks)
 
         # returns it
         self._model = model

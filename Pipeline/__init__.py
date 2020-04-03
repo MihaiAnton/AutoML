@@ -32,3 +32,4 @@ from .pipeline import Pipeline              # main class
 from .Learner import load_model             # method for model loading from file
 from .pipeline import load_pipeline         # method for loading a pipeline from file
 from .DataProcessor import Splitter
+from .Learner.Models.Callbacks import *

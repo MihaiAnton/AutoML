@@ -192,15 +192,20 @@ class Pipeline:
         self._mapper.set(self.STATE_MACRO, self.CONVERTED_STATE)
         return result
 
-    def learn(self, data: DataFrame, y_column: str = None, verbose: bool = True) -> AbstractModel:
+    def learn(self, data: DataFrame, y_column: str = None, verbose: bool = True, callbacks: list = None) -> AbstractModel:
         """
             Learns a model from the data.
+
         :param verbose: decides if the the learn() method should produce any output
         :param y_column: the name of the predicted column
         :param data: DataFrame containing the dataset to learn
+        :param callbacks: callbacks to be executed by the model when training it
         :return: trained model or None if trained is not set to true in config
         :raises: Pipeline exception
         """
+        if callbacks is None:
+            callbacks = []
+
         start = time.time()
         self._record_data_information(data, "learn")
 
@@ -214,7 +219,7 @@ class Pipeline:
             self._mapper.set("X_COLUMNS_TRAIN", list(x.columns))
 
             try:
-                result = self._learner.learn(X=x, Y=y, verbose=verbose)
+                result = self._learner.learn(X=x, Y=y, verbose=verbose, callbacks=callbacks)
             except Exception as err:
                 # TODO: add logs
                 raise PipelineException("Learn error: {}.".format(err))
@@ -303,11 +308,13 @@ class Pipeline:
             raise PipelineException("Expected model with columns {}; received {}"
                                     .format(self._mapper.get("X_COLUMNS_TRAIN", []), list(data.columns)))
 
-    def fit(self, data: DataFrame, verbose: bool = True):
+    def fit(self, data: DataFrame, verbose: bool = True, training_callbacks: list = None):
         """
             Completes the pipeline as specified in the configuration file.
+
         :param verbose: decides if the method fit() and all the methods called in it should produce any output
         :param data: DataFrame with raw data
+        :param training_callbacks: callbacks to be executed by the model when training it
         :return: data/ cleaned data/ processed data/ trained model ( based on the choices in the config file)
         """
 
@@ -316,7 +323,7 @@ class Pipeline:
         result = self.process(data, verbose=verbose)
 
         # 2. Learning
-        result = self.learn(result, verbose=verbose)
+        result = self.learn(result, verbose=verbose, callbacks=training_callbacks)
 
         return result
 

@@ -9,6 +9,7 @@ from ....Exceptions import EvolutionaryModelException
 from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
 from ..constants import AVAILABLE_TASKS
+from ..Callbacks import EvolutionaryFeedback
 
 
 class EvolutionaryModel(AbstractModel):
@@ -180,6 +181,11 @@ class EvolutionaryModel(AbstractModel):
                 "DESCRIPTION": str(offspring_m.get_model()),
                 "SCORE": offspring_m.get_fitness()
             })
+
+            # call any necessary callbacks
+            for callback in callbacks:
+                if type(callback) is EvolutionaryFeedback:
+                    callback({"epoch":epochs})
 
             # epoch end: gather time data
             epoch_end = time.time()
