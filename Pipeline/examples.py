@@ -2,8 +2,7 @@
 
     The file contains examples with each type of flow
 """
-
-from Pipeline import Pipeline, load_pipeline, load_model, read_csv
+from . import Pipeline, load_pipeline, load_model, read_csv
 
 
 # # FLOW 1 - The fully automation goal ----------------------------------------------------------------------

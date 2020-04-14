@@ -4,8 +4,8 @@ import time
 
 from pandas import DataFrame, concat
 
-from Pipeline.Mapper import Mapper
-from Pipeline.DataProcessor.processor import Processor
+from .Mapper import Mapper
+from .DataProcessor.processor import Processor
 from .Exceptions.pipelineException import PipelineException
 from .Learner.Models.abstractModel import AbstractModel
 from .Learner.learner import Learner

@@ -7,7 +7,6 @@ from sklearn.metrics import log_loss, \
 
 from .constants import CLASSIFICATION, REGRESSION
 from ...Exceptions import AbstractModelException
-from .modelTypes import DEEP_LEARNING_MODEL
 
 
 class AbstractModel(ABC):

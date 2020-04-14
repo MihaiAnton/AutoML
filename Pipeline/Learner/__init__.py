@@ -13,5 +13,4 @@
 # Package level imports
 
 from .learner import Learner
-from .learner import LearnerException
 from .Models import ModelFactory, load_model, AbstractModel
