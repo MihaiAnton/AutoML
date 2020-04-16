@@ -4,3 +4,4 @@
 """
 
 from .evolutionaryFeedback import EvolutionaryFeedback
+from .pipelineFeedback import PipelineFeedback

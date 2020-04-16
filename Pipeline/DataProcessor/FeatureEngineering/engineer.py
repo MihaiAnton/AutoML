@@ -36,10 +36,12 @@ class Engineer:
         # loading libraries for natural language processing
         self._nlp = spacy.load('en', disable=['parser', 'ner'])
 
-    def process(self, data: DataFrame, mapper: 'Mapper', column_type: dict = None, verbose: bool = True) -> DataFrame:
+    def process(self, data: DataFrame, mapper: 'Mapper', column_type: dict = None, verbose: bool = True,
+                callbacks: list = None) -> DataFrame:
         """
             Processes the dataset in a way that a learning algorithms can benefit more from it.
             Does outlier detection, feature engineering, data normalization/standardization, missing value filling, polynomial features and more.
+        :param callbacks: list of AbstractCallback instances that might be called later
         :param verbose: defines if the process() method will print output to stdout
         :param data: DataFrame consisting of the data
         :param mapper: parent mapper that keeps track of changes
@@ -50,6 +52,10 @@ class Engineer:
 
         if column_type is None:
             column_type = {}
+
+        if callbacks is None:
+            callbacks = []
+
 
         # iterate through each column and process it according to it's type
         modified_data = DataFrame()
@@ -65,6 +71,10 @@ class Engineer:
                 not_processed.append(column)
             else:
                 print("Engineer: process column {}.".format(column)) if verbose else None
+                for callback in callbacks:
+                    callback({
+                        "message": "Engineer: process column {}.".format(column)
+                    })
                 if str(dtype) in self._numeric_dtypes:
                     col_type = column_type.get(column, 'undefined')
                     interm_data = self._process_numeric(data.loc[:, [column]], column, col_type)

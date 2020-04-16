@@ -12,6 +12,7 @@ from .Learner.learner import Learner
 from .DataProcessor.DataSplitting.splitter import Splitter
 from .Learner.Models.model_loader import load_model
 from .configuration_manager import complete_configuration
+from .Learner.Models.Callbacks import PipelineFeedback
 
 
 def load_pipeline(file: str) -> 'Pipeline':
@@ -138,22 +139,32 @@ class Pipeline:
         info[source] = new_info
         self._mapper.set("DATA_METADATA", info)
 
-    def process(self, data: DataFrame, verbose: bool = True) -> DataFrame:
+    def process(self, data: DataFrame, verbose: bool = True, callbacks: list = None) -> DataFrame:
         """
             Processes the data according to the configuration in the config file
+        :param callbacks: list of AbstractCallback objects that might get called at some points in the app
         :param verbose: decides if the process() method will produce any output
         :param data: DataFrame containing the raw data that has to be transformed
         :return: DataFrame with the modified data
         :raises: Pipeline exception
         """
+        if callbacks is None:
+            callbacks = []
+
         start = time.time()
         self._record_data_information(data, "process")
         result = data
 
+        valid_callbacks = []
+        for callback in callbacks:
+            if type(callback) in [PipelineFeedback, ]:
+                valid_callbacks.append(callback)
+
+
         # 1. Data processing
         if self._config.get("DATA_PROCESSING", False):
             try:
-                result = self._processor.process(result, verbose=verbose)
+                result = self._processor.process(result, verbose=verbose, callbacks=valid_callbacks)
             except Exception as err:
                 # TODO: add logs
                 raise PipelineException("Data processing error: {}.".format(err))
@@ -162,6 +173,10 @@ class Pipeline:
         self._mapper.set("CONVERSION_DONE", True)
         end = time.time()
         print("Processed in {0:.4f} seconds.".format(end - start)) if verbose else None
+        for callback in valid_callbacks:
+            callback({
+                "message": "Processed in {0:.4f} seconds.".format(end - start)
+            })
         self._mapper.set(self.STATE_MACRO, self.PROCESSED_STATE)
         return result
 
@@ -192,7 +207,8 @@ class Pipeline:
         self._mapper.set(self.STATE_MACRO, self.CONVERTED_STATE)
         return result
 
-    def learn(self, data: DataFrame, y_column: str = None, verbose: bool = True, callbacks: list = None) -> AbstractModel:
+    def learn(self, data: DataFrame, y_column: str = None, verbose: bool = True,
+              callbacks: list = None) -> AbstractModel:
         """
             Learns a model from the data.
 
@@ -320,7 +336,7 @@ class Pipeline:
 
         # Iterating over the pipeline steps
         # 1. Data processing
-        result = self.process(data, verbose=verbose)
+        result = self.process(data, verbose=verbose, callbacks=training_callbacks)
 
         # 2. Learning
         result = self.learn(result, verbose=verbose, callbacks=training_callbacks)

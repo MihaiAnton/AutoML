@@ -85,6 +85,14 @@ class EvolutionaryModel(AbstractModel):
             :param verbose: decides whether or not the model prints intermediary outputs
             :return: the model
         """
+
+        #valid callbacks
+        valid_callbacks = []
+        for callback in callbacks:
+            if type(callback) is EvolutionaryFeedback:
+                valid_callbacks.append(callback)
+
+
         # define the task
         if self._task not in AVAILABLE_TASKS or self._population is None:
             # if the task is not defined, neither is the population
@@ -126,6 +134,12 @@ class EvolutionaryModel(AbstractModel):
         # this means that 9*p epochs will be used, since one model is created per epoch
         model_eval_time = search_time / (self._config.get("POPULATION_SIZE", 10) * 10)
 
+        # call any necessary callbacks
+        for callback in valid_callbacks:
+            callback({
+                "epoch": epochs,
+                "message": "Evaluating population...",
+            })
         print("Evaluating population...") if verbose else None
         self._population.eval(x_train, y_train, self._task, self._config.get("GENERAL_CRITERION"), model_eval_time,
                               validation_split=None)
@@ -140,10 +154,16 @@ class EvolutionaryModel(AbstractModel):
             for chromosome in self._population.get_chromosomes()
         ]
 
-
-
         # searches for the best model
         print("Searching for the best model...") if verbose else None
+
+        # call any necessary callbacks
+        for callback in valid_callbacks:
+            callback({
+                "epoch": epochs,
+                "message": "Searching for the best model...",
+            })
+
         while keep_searching:
             keep_searching = False
             epoch_start = time.time()
@@ -182,10 +202,7 @@ class EvolutionaryModel(AbstractModel):
                 "SCORE": offspring_m.get_fitness()
             })
 
-            # call any necessary callbacks
-            for callback in callbacks:
-                if type(callback) is EvolutionaryFeedback:
-                    callback({"epoch":epochs})
+
 
             # epoch end: gather time data
             epoch_end = time.time()
@@ -203,11 +220,29 @@ class EvolutionaryModel(AbstractModel):
                     self._best_model.eval(x_val, y_val, self._task, self._config.get("GENERAL_CRITERION"))
                 )
 
-            print("Epoch {:3d} -  Best Score: {:.5f} |{} Search time: {:.2f} seconds".format(
-                epochs, population_best.get_fitness(), validation_data, epoch_duration)) if verbose else None
+
+            print_string = "Epoch {:3d} -  Best Score: {:.5f} |{} Search time: {:.2f} seconds".format(
+                epochs, population_best.get_fitness(), validation_data, epoch_duration)
+
+            print(print_string) if verbose else None
+
+            # call any necessary callbacks
+            for callback in valid_callbacks:
+                callback({
+                    "epoch": epochs,
+                    "message": print_string,
+                })
+
+
 
         # training the best model
         print("Training the best model...") if verbose else None
+        for callback in valid_callbacks:
+            callback({
+                "epoch": epochs,
+                "message": "Training the best model...",
+            })
+
         self._model = self._population.get_best().get_model()
         best_model_time = int(train_time - (time.time() - start_time))  # the amount of seconds remaining
         self._model.train(X, Y, train_time=best_model_time, verbose=verbose, validation_split=validation_split)

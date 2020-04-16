@@ -4,7 +4,7 @@ import json
 
 from pandas import read_csv
 from Pipeline import Pipeline
-from Pipeline import EvolutionaryFeedback
+from Pipeline import EvolutionaryFeedback, PipelineFeedback
 
 data = read_csv("../Datasets/titanic.csv")
 
@@ -12,14 +12,14 @@ data = read_csv("../Datasets/titanic.csv")
 config = {
     "DATA_PROCESSING": True,
     "DATA_PROCESSING_CONFIG": {
-        "PREDICTED_COLUMN_NAME": "PassengerId",
+        "PREDICTED_COLUMN_NAME": "Sex",
     },
     "TRAINING": True,
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "",
         "TIME": "1m",
-        "PREDICTED_COLUMN_NAME": "PassengerId"
+        "PREDICTED_COLUMN_NAME": "Sex"
     }
 }
 
@@ -30,7 +30,10 @@ def print_stats(d):
 pipeline = Pipeline(config=config)
 
 # fit the data to the pipeline
-model = pipeline.fit(data, verbose=True, training_callbacks=[EvolutionaryFeedback(print_stats)])
+model = pipeline.fit(data, verbose=False, training_callbacks=[
+    EvolutionaryFeedback(print_stats),
+    PipelineFeedback(print_stats),
+])
 # summary = model.summary()
 # with open('summary.json', 'w') as outfile:
 #     json.dump(summary, outfile)

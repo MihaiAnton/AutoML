@@ -57,10 +57,12 @@ class Processor:
         """
         return self._mapper
 
-    def process(self, data: DataFrame, verbose: bool = True) -> DataFrame:
+    def process(self, data: DataFrame, verbose: bool = True, callbacks: list = None) -> DataFrame:
         """
             Completes the whole cycle of automated feature engineering.
-            Received raw data and returns data ready to be fed into the next step of the pipeline or into a learning algorithm.
+            Received raw data and returns data ready to be fed into the next step of the pipeline or
+        into a learning algorithm.
+        :param callbacks: list of AbstractCallback instances that might get called later
         :param verbose: decides if the process() method will produce any output
         :param data: Raw data input, in form of DataFrame
         :return: cleaned and processed data, in form of DataFrame
@@ -94,7 +96,7 @@ class Processor:
             self._mapper.set("FEATURE_ENGINEERING", True)
 
             engineer = Engineer(self._config.get("FEATURE_ENGINEERING_CONFIG", {}))
-            X = engineer.process(X, self._mapper, {}, verbose=verbose)
+            X = engineer.process(X, self._mapper, {}, verbose=verbose, callbacks=callbacks)
 
         # 4. Retrieve mappings
         # mappings are already in the mapper field, which would be saved to file as soon as the save_processor is called
