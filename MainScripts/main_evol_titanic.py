@@ -12,14 +12,14 @@ data = read_csv("../Datasets/titanic.csv")
 config = {
     "DATA_PROCESSING": True,
     "DATA_PROCESSING_CONFIG": {
-        "PREDICTED_COLUMN_NAME": "Survived",
+        "PREDICTED_COLUMN_NAME": "PassengerId",
     },
     "TRAINING": True,
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
-        "TASK": "classification",
+        "TASK": "",
         "TIME": "1m",
-        "PREDICTED_COLUMN_NAME": "Survived"
+        "PREDICTED_COLUMN_NAME": "PassengerId"
     }
 }
 
