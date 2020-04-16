@@ -8,6 +8,7 @@ class PipelineFeedback(AbstractCallback):
     """
 
     def f(self, data: dict):
+        data['type'] = "PIPELINE_FEEDBACK"
         if self._fun is not None:
             try:
                 self._fun(data)

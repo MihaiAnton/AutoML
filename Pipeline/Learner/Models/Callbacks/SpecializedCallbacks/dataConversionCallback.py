@@ -1,14 +1,14 @@
 from ..abstractCallback import AbstractCallback
 
 
-class EvolutionaryFeedback(AbstractCallback):
+class DataConversionCallback(AbstractCallback):
     """
-        Defines a callback that receives some dictionary with data from the evolutionary
-    model at each epoch and calls the abstract function with it.
+        Defines a callback that, after the data engineering step in pipeline fit, returns a
+    preview of the generated data.
     """
 
     def f(self, data: dict):
-        data["type"] = "EVOLUTIONARY_FEEDBACK"
+        data["type"] = "PROCESSED_DATA_PREVIEW"
         if self._fun is not None:
             try:
                 self._fun(data)

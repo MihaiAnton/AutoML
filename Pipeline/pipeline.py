@@ -12,7 +12,7 @@ from .Learner.learner import Learner
 from .DataProcessor.DataSplitting.splitter import Splitter
 from .Learner.Models.model_loader import load_model
 from .configuration_manager import complete_configuration
-from .Learner.Models.Callbacks import PipelineFeedback
+from .Learner.Models.Callbacks import PipelineFeedback, DataConversionCallback
 
 
 def load_pipeline(file: str) -> 'Pipeline':
@@ -159,7 +159,6 @@ class Pipeline:
         for callback in callbacks:
             if type(callback) in [PipelineFeedback, ]:
                 valid_callbacks.append(callback)
-
 
         # 1. Data processing
         if self._config.get("DATA_PROCESSING", False):
@@ -337,6 +336,16 @@ class Pipeline:
         # Iterating over the pipeline steps
         # 1. Data processing
         result = self.process(data, verbose=verbose, callbacks=training_callbacks)
+
+        # If data processing is activated and if the method has the dataConversionCallback passed as an argument,
+        # return the intermediary data preview
+        if self._config.get("DATA_PROCESSING", False):
+            for callback in training_callbacks:
+                if type(callback) is DataConversionCallback:
+                    callback({
+                        "data": result.head(100).to_json()
+                    })
+                    break
 
         # 2. Learning
         result = self.learn(result, verbose=verbose, callbacks=training_callbacks)
