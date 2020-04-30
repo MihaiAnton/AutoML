@@ -8,3 +8,4 @@ from .pipelineFeedback import PipelineFeedback
 from .dataConversionCallback import DataConversionCallback
 from .modelTriedCallback import ModelTriedCallback
 from .evolutionaryNewBestFeedback import EvolutionaryNewBestFeedback
+from .modelTrainingCallback import ModelTrainingCallback

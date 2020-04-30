@@ -3,23 +3,29 @@
 import json
 
 from pandas import read_csv
-from Pipeline import Pipeline
-from Pipeline import EvolutionaryFeedback, PipelineFeedback
+from Pipeline import Pipeline, load_pipeline
+from Pipeline import EvolutionaryFeedback, PipelineFeedback, ModelTriedCallback
 
+pip2 = load_pipeline("/Users/mihai/Desktop/pipeline")
 data = read_csv("../Datasets/titanic.csv")
+
+
+result = pip2.predict(data)
+
+print(1)
 
 # create a pipeline with the default configuration
 config = {
     "DATA_PROCESSING": True,
     "DATA_PROCESSING_CONFIG": {
-        "PREDICTED_COLUMN_NAME": "Sex",
+        "PREDICTED_COLUMN_NAME": "Survived",
     },
     "TRAINING": True,
     "TRAINING_CONFIG": {
         "TYPE": "evolutionary",
         "TASK": "",
-        "TIME": "1m",
-        "PREDICTED_COLUMN_NAME": "Sex"
+        "TIME": "10s",
+        "PREDICTED_COLUMN_NAME": "Survived"
     }
 }
 
@@ -31,8 +37,9 @@ pipeline = Pipeline(config=config)
 
 # fit the data to the pipeline
 model = pipeline.fit(data, verbose=False, training_callbacks=[
-    EvolutionaryFeedback(print_stats),
-    PipelineFeedback(print_stats),
+    # EvolutionaryFeedback(print_stats),
+    # PipelineFeedback(print_stats),
+    # ModelTriedCallback(print_stats),
 ])
 # summary = model.summary()
 # with open('summary.json', 'w') as outfile:
@@ -53,3 +60,6 @@ model = pipeline.fit(data, verbose=False, training_callbacks=[
 
 pred = pipeline.predict(data)
 print(pred)
+
+pipeline.save("demo_pipeline")
+
