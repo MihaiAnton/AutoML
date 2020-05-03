@@ -110,6 +110,7 @@ class RandomForestModel(AbstractModel):
 
             epoch_start = time.time()
 
+            model = self._model
             # start a random forest model
             if self._model is None:
                 model = self._create_model()
@@ -293,7 +294,10 @@ class RandomForestModel(AbstractModel):
                 "N_ESTIM": self._n_estimators,
                 "CRITERION": self._criterion,
                 "TRAIN_CRIT": self._train_criterion,
-                "VAL_CRIT": self._val_criterion
+                "VAL_CRIT": self._val_criterion,
+
+                "MODEL_SCORE": self._model_score,
+
             }
         }
 
@@ -323,6 +327,7 @@ class RandomForestModel(AbstractModel):
         self._criterion = mdata.get("CRITERION")
         self._train_criterion = mdata.get("TRAIN_CRIT")
         self._val_criterion = mdata.get("VAL_CRIT")
+        self._model_score = mdata.get("MODEL_SCORE")
 
         # init the model
         self._model = pickle.loads(model)
@@ -375,3 +380,10 @@ class RandomForestModel(AbstractModel):
         warnings.warn("Method eval() of AbstractModel not available for RandomForestModel.", RuntimeWarning)
 
         return 0
+
+    def get_labels(self) -> list:
+        """
+            For the moment this method is used only in neural networks for the evolutionary flow.
+        :return:
+        """
+        return []

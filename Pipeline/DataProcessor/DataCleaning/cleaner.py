@@ -36,6 +36,8 @@ class Cleaner:
         # remove rows with predicted value missing
         if self._config.get('REMOVE_WHERE_Y_MISSING', False) and not (
                 predicted_col is None):  # if it exists and if it is set on true
+            self._mapper.set("Remove_Y_missing", True)
+            self._mapper.set("Predicted_col", predicted_col)
             if predicted_col in data.columns:
                 data = data.dropna(subset=[predicted_col])
 
@@ -51,7 +53,7 @@ class Cleaner:
             column_count = len(data.columns)
             remove_threshold = float(self._config.get('ROW_REMOVAL_THRESHOLD', 1))
             data = data[data.isna().sum(axis=1) <= column_count - remove_threshold * column_count]
-                                            # filter out the ones that have too many missing values
+            # filter out the ones that have too many missing values
 
         if self._config.get('REMOVE_COLUMNS', False):
             row_count = len(data)
@@ -91,6 +93,11 @@ class Cleaner:
         for column in removed_columns:
             if column in data.columns:
                 data = data.drop(column, axis=1)
+
+        if mapper.get("Remove_Y_missing", False):
+            predicted_col = mapper.get("Predicted_col", "undefined")
+            if predicted_col in data.columns:
+                data = data.dropna(subset=[predicted_col])
 
         data.reset_index(drop=True, inplace=True)
         return data

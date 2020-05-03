@@ -17,6 +17,8 @@ class SvmModel(AbstractModel):
         The framework used is Sklearn
     """
 
+
+
     def __init__(self, task: str = "", config: dict = None, predicted_name: list = None,
                  dictionary=None):
         """
@@ -284,4 +286,11 @@ class SvmModel(AbstractModel):
         warnings.warn("Method eval() of AbstractModel not available for SvmModel.", RuntimeWarning)
 
         return 0
+
+    def get_labels(self) -> list:
+        """
+            For the moment this method is used only in neural networks for the evolutionary flow.
+        :return:
+        """
+        return []
 

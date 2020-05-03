@@ -9,10 +9,8 @@ from Pipeline import EvolutionaryFeedback, PipelineFeedback, ModelTriedCallback
 pip2 = load_pipeline("/Users/mihai/Desktop/pipeline")
 data = read_csv("../Datasets/titanic.csv")
 
-pip2.learn(pip2.convert(data), train_time=40)
-result = pip2.predict(data)
 
-print(1)
+
 
 # create a pipeline with the default configuration
 config = {
