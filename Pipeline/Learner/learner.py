@@ -34,7 +34,7 @@ class Learner:
         self._model_factory = ModelFactory(self._config)
         self._model = model
 
-    def learn(self, X: DataFrame, Y: DataFrame, verbose: bool = True, callbacks:list=None) \
+    def learn(self, X: DataFrame, Y: DataFrame, verbose: bool = True, callbacks: list = None, time: int = None) \
             -> AbstractModel:
         """
             Learns based on the configuration provided.
@@ -43,6 +43,7 @@ class Learner:
         :param Y: the predictions to compare to
 
         :param verbose: decides whether the learn() method should produce any output
+        :param time: time in seconds for the training session; if not specified the time in config is used
         :return: the trained model
         """
         if callbacks is None:
@@ -61,7 +62,10 @@ class Learner:
             model = self._model_factory.create_model(in_size=input_size, out_size=output_size)
 
         # trains the model
-        train_time = self._convert_train_time(self._config.get("TIME", "10m"))
+        if time is None:
+            train_time = self._convert_train_time(self._config.get("TIME", "10m"))
+        else:
+            train_time = time
 
         # here's where the magic happens
         model.train(X, Y, train_time, verbose=verbose, callbacks=callbacks)

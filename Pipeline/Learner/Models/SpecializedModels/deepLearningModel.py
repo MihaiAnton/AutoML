@@ -16,6 +16,7 @@ import pandas as pd
 
 from ..modelTypes import DEEP_LEARNING_MODEL
 from ..constants import AVAILABLE_TASKS, CLASSIFICATION
+from ..Callbacks import ModelTrainingCallback
 
 
 class ModuleList(object):
@@ -139,7 +140,7 @@ class DeepLearningModel(AbstractModel):
             # raise DeepLearningModelException("NaN values encountered in DeepLearningModel._predict().")
 
         df.fillna(0, inplace=True)  # TODO find better alternative - this is the quick fix to a deeper problem
-                                    # when doing los.backward() or forward() in the network, nans are produced
+        # when doing los.backward() or forward() in the network, nans are produced
         # was added just in case a value is nan
 
         if self._task == CLASSIFICATION and raw_output is False:
@@ -187,6 +188,14 @@ class DeepLearningModel(AbstractModel):
         if not self._train_mode:
             self._train_mode = True
             self._model.train()
+
+        if callbacks is None:
+            callbacks = []
+
+        _train_update_callback = None
+        for callback in callbacks:
+            if type(callback) is ModelTrainingCallback:
+                _train_update_callback = callback
 
         # define an optimizer
         # should be defined in configuration - a default one will be used now for the demo
@@ -272,7 +281,6 @@ class DeepLearningModel(AbstractModel):
                 batch_x = x_train[start_index:start_index + batch_size]
                 batch_y = y_train[start_index:start_index + batch_size]
 
-
                 self._model.eval()
                 output = self._model(batch_x)
                 self._model.train()
@@ -352,16 +360,25 @@ class DeepLearningModel(AbstractModel):
                         # print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
                         #       .format(epochs, running_loss / x_train.shape[0], loss_val / x_val.shape[0],
                         #               day, hour, minute, second)) if verbose else None
+                        string = "Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}" \
+                            .format(epochs+1, running_loss / batch_count, loss_val,
+                                    day, hour, minute, second)
 
-                        print("Epoch {} - Training loss: {} - Validation loss: {} - ETA: {}{}:{}:{}"
-                              .format(epochs, running_loss / batch_count, loss_val,
-                                      day, hour, minute, second)) if verbose else None
+                        print(string) if verbose else None
+                        if _train_update_callback is not None:
+                            _train_update_callback({"message": string})
+
+
 
                     else:
-                        print("Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs,
-                                                                                      running_loss / x_train.shape[0],
-                                                                                      day, hour, minute,
-                                                                                      second)) if verbose else None
+                        string = "Epoch {} - Training loss: {} - ETA: {}{}:{}:{}".format(epochs+1,
+                                                                                         running_loss / x_train.shape[
+                                                                                             0],
+                                                                                         day, hour, minute,
+                                                                                         second)
+                        print(string) if verbose else None
+                        if _train_update_callback is not None:
+                            _train_update_callback({"message": string})
 
         return self
 
@@ -498,7 +515,7 @@ class DeepLearningModel(AbstractModel):
             dropouts = [dropout_requested] * (len(hidden_layers))  # one after each hidden layer
         elif type(dropout_requested) is list:
             dropouts = dropout_requested[:(len(hidden_layers))]
-            dropouts = dropouts + [0]*(len(hidden_layers)-len(dropouts))
+            dropouts = dropouts + [0] * (len(hidden_layers) - len(dropouts))
         self._dropouts = dropouts
 
         # create the network class
@@ -552,7 +569,6 @@ class DeepLearningModel(AbstractModel):
 
             def forward(self, x):
                 # for each hidden layer: apply the weighted transformation, activate and dropout
-
 
                 for i in range(self._layer_count - 1):
                     x = self._layers[i](x)  # transform
@@ -636,6 +652,11 @@ class DeepLearningModel(AbstractModel):
         self._layers = data.get("LAYERS")
         self._activations = data.get("ACTIVATIONS")
         self._dropouts = data.get("DROPOUTS")
+        # training metrics useful for evaluation
+        self._epoch_loss_train = []  # for each epoch the loss is collected in this array
+
+        # classification labels
+        self._classification_labels = []
 
         # init the model
         self._model = self.create_model()

@@ -10,7 +10,7 @@ from ....Exceptions import EvolutionaryModelException
 from ..modelTypes import EVOLUTIONARY_MODEL
 from .population import Population
 from ..constants import AVAILABLE_TASKS
-from ..Callbacks import EvolutionaryFeedback, ModelTriedCallback, EvolutionaryNewBestFeedback
+from ..Callbacks import EvolutionaryFeedback, ModelTriedCallback, EvolutionaryNewBestFeedback, ModelTrainingCallback
 
 
 class EvolutionaryModel(AbstractModel):
@@ -86,12 +86,17 @@ class EvolutionaryModel(AbstractModel):
             :param verbose: decides whether or not the model prints intermediary outputs
             :return: the model
         """
+        if callbacks is None:
+            callbacks = []
 
         # valid callbacks
         valid_callbacks = []
         model_tried_callback = None
         epoch_best_callback = None
         for callback in callbacks:
+            if type(callback) is ModelTrainingCallback:
+                valid_callbacks.append(callback)
+
             if type(callback) is EvolutionaryFeedback:
                 valid_callbacks.append(callback)
 
@@ -100,6 +105,7 @@ class EvolutionaryModel(AbstractModel):
 
             if type(callback) is EvolutionaryNewBestFeedback:
                 epoch_best_callback = callback
+
 
         # define the task
         if self._task not in AVAILABLE_TASKS or self._population is None:
@@ -144,10 +150,11 @@ class EvolutionaryModel(AbstractModel):
 
         # call any necessary callbacks
         for callback in valid_callbacks:
-            callback({
-                "epoch": epochs,
-                "message": "Evaluating population...",
-            })
+            if type(callback) is EvolutionaryFeedback:
+                callback({
+                    "epoch": epochs,
+                    "message": "Evaluating population...",
+                })
 
         evaluation_feedback = None
         if model_tried_callback is not None:
@@ -185,10 +192,12 @@ class EvolutionaryModel(AbstractModel):
 
         # call any necessary callbacks
         for callback in valid_callbacks:
-            callback({
-                "epoch": epochs,
-                "message": "Searching for the best model...",
-            })
+            if type(callback) is EvolutionaryFeedback:
+                callback({
+                    "epoch": epochs,
+                    "message": "Searching for the best model...",
+                })
+                break
 
         while keep_searching:
             keep_searching = False
@@ -266,22 +275,33 @@ class EvolutionaryModel(AbstractModel):
 
             # call any necessary callbacks
             for callback in valid_callbacks:
-                callback({
-                    "epoch": epochs,
-                    "message": print_string,
-                })
+                if type(callback) is EvolutionaryFeedback:
+                    callback({
+                        "epoch": epochs,
+                        "message": print_string,
+                    })
+                    break
 
         # training the best model
         print("Training the best model...") if verbose else None
         for callback in valid_callbacks:
-            callback({
-                "epoch": epochs,
-                "message": "Training the best model...",
-            })
+            if type(callback) is EvolutionaryFeedback:
+                callback({
+                    "epoch": epochs,
+                    "message": "Training the best model...",
+                })
+                break
 
         self._model = self._population.get_best().get_model()
         best_model_time = int(train_time - (time.time() - start_time))  # the amount of seconds remaining
-        self._model.train(X, Y, train_time=best_model_time, verbose=verbose, validation_split=validation_split)
+
+        _callbacks = []
+        for callback in valid_callbacks:
+            if type(callback) is ModelTrainingCallback:
+                _callbacks.append(callback)
+
+        self._model.train(X, Y, train_time=best_model_time, verbose=verbose, validation_split=validation_split,
+                          callbacks=_callbacks)
 
         # return the trained best model
         return self._model

@@ -207,7 +207,7 @@ class Pipeline:
         return result
 
     def learn(self, data: DataFrame, y_column: str = None, verbose: bool = True,
-              callbacks: list = None) -> AbstractModel:
+              callbacks: list = None,train_time:int =None) -> AbstractModel:
         """
             Learns a model from the data.
 
@@ -215,6 +215,7 @@ class Pipeline:
         :param y_column: the name of the predicted column
         :param data: DataFrame containing the dataset to learn
         :param callbacks: callbacks to be executed by the model when training it
+        :param train_time: time in seconds for the training session; if not specified the time in config is used
         :return: trained model or None if trained is not set to true in config
         :raises: Pipeline exception
         """
@@ -234,7 +235,7 @@ class Pipeline:
             self._mapper.set("X_COLUMNS_TRAIN", list(x.columns))
 
             try:
-                result = self._learner.learn(X=x, Y=y, verbose=verbose, callbacks=callbacks)
+                result = self._learner.learn(X=x, Y=y, verbose=verbose, callbacks=callbacks, time=train_time)
             except Exception as err:
                 # TODO: add logs
                 raise PipelineException("Learn error: {}.".format(err))
