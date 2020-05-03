@@ -2,22 +2,32 @@ from pandas import DataFrame, get_dummies
 import pandas as pd
 import numpy as np
 
-from ..FeatureMapping import Mapper
+from ...Mapper import Mapper
 from sklearn import preprocessing as pp
-from ...Exceptions.dataProcessorException import DataEngineeringException
+from ...Exceptions import DataEngineeringException
 
 import spacy
 from nltk import word_tokenize
-from nltk.stem import WordNetLemmatizer
 
 
 class Engineer:
     """
         Class responsible with feature engineering.
         Handles continuous and categorical features, both numeric and textual
+
+        Methods:
+            - process: processes a dataframe with the rules form the config file
+            - convert: converts a dataset with the rules used before for process
     """
 
-    def __init__(self, config:dict={}):
+    def __init__(self, config: dict = None):
+        """
+            Inits a Engineer object.
+        :param config: dictionary with the configuration for the Engineer class
+                        expected to receive the FEATURE_ENGINEERING_CONFIG part of the config file
+        """
+        if config is None:
+            config = {}
         self._config = config
         self._mapper = Mapper("Engineer")
         self._numeric_dtypes = ["float64", "int64", "bool", "float32", "int32", "int8", "float8"]
@@ -25,12 +35,14 @@ class Engineer:
 
         # loading libraries for natural language processing
         self._nlp = spacy.load('en', disable=['parser', 'ner'])
-        # self._wordnet_lemmatizer = WordNetLemmatizer()
 
-    def process(self, data: DataFrame, mapper: 'Mapper', column_type:str={})->DataFrame:
+    def process(self, data: DataFrame, mapper: 'Mapper', column_type: dict = None, verbose: bool = True,
+                callbacks: list = None) -> DataFrame:
         """
             Processes the dataset in a way that a learning algorithms can benefit more from it.
             Does outlier detection, feature engineering, data normalization/standardization, missing value filling, polynomial features and more.
+        :param callbacks: list of AbstractCallback instances that might be called later
+        :param verbose: defines if the process() method will print output to stdout
         :param data: DataFrame consisting of the data
         :param mapper: parent mapper that keeps track of changes
         :param column_type: describes whether features are continuous or discrete in form of a dictionary
@@ -38,21 +50,32 @@ class Engineer:
         :return: processed data in form of DataFrame
         """
 
+        if column_type is None:
+            column_type = {}
+
+        if callbacks is None:
+            callbacks = []
+
+
         # iterate through each column and process it according to it's type
         modified_data = DataFrame()
         data_types = data.dtypes
         not_processed = []
 
         for column in data.columns:
-            print("Engineer: process column {}.".format(column))
-            dtype = data_types[column]
 
-            interm_data = None
+            dtype = data_types[column]
 
             if column in self._config.get("DO_NOT_PROCESS", []):
                 interm_data = data[[column]]
                 not_processed.append(column)
             else:
+                print("Engineer: process column {}.".format(column)) if verbose else None
+                for callback in callbacks:
+                    callback({
+                        "message": "Engineer: process column {}.".format(column)
+                    })
+
                 if str(dtype) in self._numeric_dtypes:
                     col_type = column_type.get(column, 'undefined')
                     interm_data = self._process_numeric(data.loc[:, [column]], column, col_type)
@@ -72,8 +95,9 @@ class Engineer:
         mapper.set_mapper(self._mapper)
         return modified_data
 
-    #################################################   Numeric processing    #################################################
-    def _process_numeric(self, data:DataFrame, column_name:str, column_type:str)->DataFrame:
+    """""""""""""""""""""""""""""""""""""""""""""   Numeric processing    """""""""""""""""""""""""""""""""""""""""""""
+
+    def _process_numeric(self, data: DataFrame, column_name: str, column_type: str) -> DataFrame:
         """
             Processes a numeric column; Does nan replacing and feature engineering as specified in the config file.
         :param data: DataFrame containing the column to process
@@ -94,7 +118,7 @@ class Engineer:
 
         return result
 
-    def _process_numeric_continuous(self, data:DataFrame, column_name:str)->DataFrame:
+    def _process_numeric_continuous(self, data: DataFrame, column_name: str) -> DataFrame:
         """
             Processes a numeric column which is known to have a continuous values distribution.
             1. Capping outliers which are more/less than x/-x standard deviations from the mean (x from config file)
@@ -164,14 +188,21 @@ class Engineer:
             column_meta_data['normalization_mean'] = mean
             column_meta_data['normalization_std'] = std
 
-            data = (data - mean) / std
+            any_std_0 = False
+            for s in std:
+                if s == 0:
+                    any_std_0 = True
+                    break
+
+            if any_std_0 is False:
+                data = (data - mean) / std
         else:
             column_meta_data['normalization_method'] = 'none'
 
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    def _process_numeric_discrete(self, data:DataFrame, column_name:str)->DataFrame:
+    def _process_numeric_discrete(self, data: DataFrame, column_name: str) -> DataFrame:
         """
             Processes a numeric column which is known to have a discrete values distribution.
             Applies one hot encoding and returns the result.
@@ -195,10 +226,9 @@ class Engineer:
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    ###########################################################################################################################
+    """""""""""""""""""""""""""""""""""""""""""""   Text processing    """""""""""""""""""""""""""""""""""""""""""""
 
-    #################################################   Text processing    #################################################
-    def _process_text(self, data:DataFrame, column_name:str, column_type:str)->DataFrame:
+    def _process_text(self, data: DataFrame, column_name: str, column_type: str) -> DataFrame:
         """
             Processes a text column; Does nan replacing and feature engineering as specified in the config file.
         :param data: DataFrame containing the column to process
@@ -219,7 +249,7 @@ class Engineer:
 
         return result
 
-    def _process_text_discrete(self, data:DataFrame, column_name:str)->DataFrame:
+    def _process_text_discrete(self, data: DataFrame, column_name: str) -> DataFrame:
         """
             Processes a text column which is known to have a discrete values distribution.
             Applies one hot encoding and returns the result.
@@ -236,7 +266,7 @@ class Engineer:
             return data
 
         if self._config.get("CATEGORICAL_DATA_CONFIG", {}).get("TEXTUAL", {}).get("METHOD",
-                                                       "one_hot_encode") == 'one_hot_encode':
+                                                                                  "one_hot_encode") == 'one_hot_encode':
             column_meta_data["method"] = "one_hot_encode"
             data = get_dummies(data, prefix=column_name, columns=[column_name])
             column_meta_data['onehotencoded_names'] = data.columns.to_list()
@@ -244,7 +274,7 @@ class Engineer:
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    def _process_text_continuous(self, data:DataFrame, column_name:str)->DataFrame:
+    def _process_text_continuous(self, data: DataFrame, column_name: str) -> DataFrame:
         """
             Processes a text column the is known to have a continuous distribution, thus
         no categorical values.
@@ -263,7 +293,7 @@ class Engineer:
             self._mapper.set(column_name, column_meta_data)
             return data
 
-        #fill nan's
+        # fill nan's
         data = data[[column_name]].fillna("")
         column_meta_data['default_value'] = ""
 
@@ -294,16 +324,17 @@ class Engineer:
             considered_words.append(item[0])
             column_names.append(column_name + "_" + item[0])
 
-        #mark in the mapper the correspondence between words and new columns
+        # mark in the mapper the correspondence between words and new columns
         word_embedding = {}
-        for word, feature in zip(considered_words,column_names):
+        for word, feature in zip(considered_words, column_names):
             word_embedding[word] = feature
 
         column_meta_data['word_embedding'] = word_embedding
         # column_meta_data['words_to_map'] = considered_words
         column_meta_data['column_names'] = column_names
-        column_meta_data['word_delimiter'] = self._config.get("CONTINUOUS_DATA_CONFIG", {}).get("TEXTUAL`", {}).get("WORD_DELIMITERS",
-                                                                                            "?!|/.,:;'-={}[]()")
+        column_meta_data['word_delimiter'] = self._config.get("CONTINUOUS_DATA_CONFIG", {}).get("TEXTUAL`", {}).get(
+            "WORD_DELIMITERS",
+            "?!|/.,:;'-={}[]()")
 
         data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=column_names)
 
@@ -315,7 +346,7 @@ class Engineer:
         self._mapper.set(column_name, column_meta_data)
         return data
 
-    def _get_world_cloud(self, sentence:str, nlp=None, separators:str=None)->list:
+    def _get_world_cloud(self, sentence: str, nlp=None, separators: str = None) -> list:
         """
             Converts text format to a standardized format through tokenizing and stemming.
         :param sentence: the string to be analyzed
@@ -329,13 +360,12 @@ class Engineer:
         if nlp is None:
             nlp = self._nlp
 
-
         # tokenize with nltk
         tokens = word_tokenize(sentence)
         clean_sentence = ""
         if separators is None:
             separators = self._config.get("CONTINUOUS_DATA_CONFIG", {}).get("TEXTUAL`", {}).get("WORD_DELIMITERS",
-                                                                                            "?!|/.,:;'-={}[]()")
+                                                                                                "?!|/.,:;'-={}[]()")
 
         for word in tokens:
             if not (word in separators):
@@ -352,9 +382,7 @@ class Engineer:
 
         return list(set(words))
 
-    ###########################################################################################################################
-
-    def _determine_cont_discrete(self, data:DataFrame, column_name:str)->str:
+    def _determine_cont_discrete(self, data: DataFrame, column_name: str) -> str:
         """
             Determines heuristically if the data withing the DataFrames is continuous or discrete
             If column explicitly marked as continuous or discrete, it will be considered as specified
@@ -376,12 +404,13 @@ class Engineer:
         else:
             return 'continuous'
 
-    #################################################   Conversion methods    #################################################
+    """""""""""""""""""""""""""""""""""""""""""""   Conversion methods    """""""""""""""""""""""""""""""""""""""""""""
 
     @staticmethod
-    def convert(data: DataFrame, mapper: 'Mapper')->DataFrame:
+    def convert(data: DataFrame, mapper: 'Mapper', verbose: bool = True) -> DataFrame:
         """
             Converts new data to a format previously mapped into 'mapper'
+        :param verbose: decides if the convert() method will produce any output
         :param data: DataFrame with data to be transformed
         :param mapper: Mapper class containing the rules for transformation.
         :return: converted data in form of DataFrame
@@ -391,36 +420,36 @@ class Engineer:
         processed_data = DataFrame()
 
         for column in data.columns:
-            print("Engineer: convert column {}.".format(column))
+
             interm_data = None
             if column in mapper.get("NOT_PROCESSED", []):
                 interm_data = data[[column]]
             else:
+                print("Engineer: convert column {}.".format(column)) if verbose else None
                 column_data = mapper.get(column, None)
                 if column_data is None:
                     raise DataEngineeringException(
                         "Could not convert feature {}. Not found in the mapper dictionary.".format(column))
 
-                #else
+                # else
                 if column_data.get("data_type") == "numeric":
                     interm_data = Engineer._convert_numeric(data.loc[:, [column]], column_data)
-                else:    #text
+                else:  # text
                     interm_data = Engineer._convert_text(data.loc[:, [column]], column_data)
 
             processed_data = pd.concat([processed_data, interm_data], axis=1)
 
         return processed_data
 
-
     @staticmethod
-    def _convert_text(data:DataFrame, info:dict)->DataFrame:
+    def _convert_text(data: DataFrame, info: dict) -> DataFrame:
         """
             Converts textual data as specified in the info dictionary
         :param data:
         :param info:
         :return:
         """
-        if info.get("not_process",False):
+        if info.get("not_process", False):
             return data
 
         if info.get("distribution") == "discrete":
@@ -428,14 +457,13 @@ class Engineer:
             if info.get("method") == "one_hot_encode":
                 new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=info.get("onehotencoded_names"))
                 for i, r in data[[info.get("name")]].iterrows():
-                    # print(str(info.get("name") + "_" + str(r[0])))
                     if str(info.get("name") + "_" + str(r[0])) in new_data.columns:
                         new_data.iloc[i][str(info.get("name") + "_" + str(r[0]))] = 1
 
                 data = new_data
 
-        else:   #continuous
-            data = data[[info.get("name")]].fillna(info.get("default_value",""))
+        else:  # continuous
+            data = data[[info.get("name")]].fillna(info.get("default_value", ""))
 
             nlp = spacy.load('en', disable=['parser', 'ner'])
             word_delimiter = info.get('word_delimiter')
@@ -450,18 +478,16 @@ class Engineer:
 
             data = new_data
 
-
         return data
 
-
     @staticmethod
-    def _convert_numeric(data: DataFrame, info:dict)->DataFrame:
+    def _convert_numeric(data: DataFrame, info: dict) -> DataFrame:
         """
             Convert numeric features as specified in the info dictionary
         :param info:
         :return:
         """
-        if info.get("not_process",False):
+        if info.get("not_process", False):
             return data
 
         if info.get("distribution") == "discrete":
@@ -469,13 +495,12 @@ class Engineer:
             if info.get("method") == "one_hot_encode":
                 new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=info.get("onehotencoded_names"))
                 for i, r in data[[info.get("name")]].iterrows():
-                    # print(str(info.get("name") + "_" + str(r[0])))
                     if str(info.get("name") + "_" + str(r[0])) in new_data.columns:
                         new_data.iloc[i][str(info.get("name") + "_" + str(r[0]))] = 1
 
                 data = new_data
 
-        else:   #continuous
+        else:  # continuous
             # 1. Capping outliers
             column_name = info.get("name")
             lower_limit = info.get("lower_limit")
@@ -512,32 +537,3 @@ class Engineer:
                 data = (data - mean) / std
 
         return data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
