@@ -333,6 +333,9 @@ class Pipeline:
         :param training_callbacks: callbacks to be executed by the model when training it
         :return: data/ cleaned data/ processed data/ trained model ( based on the choices in the config file)
         """
+        if training_callbacks is None:
+            training_callbacks = []
+
 
         # Iterating over the pipeline steps
         # 1. Data processing
