@@ -30,7 +30,7 @@ class Engineer:
             config = {}
         self._config = config
         self._mapper = Mapper("Engineer")
-        self._numeric_dtypes = ["float64", "int64", "bool", "float32", "int32", "int8", "float8"]
+        self._numeric_dtypes = ["float64", "int64", "bool", "float32", "int32", "int8", "float8", 'uint8', 'uint32']
         self._textual_dtypes = ["object", "string"]
 
         # loading libraries for natural language processing
@@ -55,7 +55,6 @@ class Engineer:
 
         if callbacks is None:
             callbacks = []
-
 
         # iterate through each column and process it according to it's type
         modified_data = DataFrame()
