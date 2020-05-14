@@ -10,7 +10,7 @@ The main usecases:
     
 On a high level, this is how the flow of the Pipeline works:
 
-![Pipeline Flow](Others/pipelineFlow.png)
+![Pipeline Flow](Others/pipelineFlow.png =250x200)
 
 
 A short GIF presenting the Cloud based solution, available soon:
