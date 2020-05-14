@@ -1,11 +1,20 @@
 # AutoML
-An automated Machine Learning pipeline for faster Data Science projects
+#### An automated Machine Learning pipeline for faster Data Science projects.
 
-* Implementing a pipeline that aims to convert raw data to trained models.
-* The main usecases:
-    * Complete Machine Learning flow for small projects.
-    * Productivity tool for Data Scientists to figure out which model configurations work and which not.
+Using Evolutionary Algorithms for Neural Architecture Search and State-Of-The-Art data engineering techniques towards building an off the box machine learning solution.
+
+The main usecases:
+* Complete Machine Learning flow for small projects.
+* Productivity tool for Data Scientists to figure out which model configurations work and which not.
     
     
+On a high level, this is how the flow of the Pipeline works:
+
+![Pipeline Flow](Others/pipelineFlow.png)
+
+
+A short GIF presenting the Cloud based solution, available soon:
+
+![](Others/demo.gif)
+
 For usage examples check out the [examples file](Pipeline/examples.py).
-
