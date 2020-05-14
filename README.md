@@ -10,7 +10,7 @@ The main usecases:
     
 On a high level, this is how the flow of the Pipeline works:
 
-![Pipeline Flow](Others/pipelineFlow.png) { width: 200px; }
+<img src="Others/pipelineFlow.png" alt="drawing" width="200"/>
 
 
 A short GIF presenting the Cloud based solution, available soon:
