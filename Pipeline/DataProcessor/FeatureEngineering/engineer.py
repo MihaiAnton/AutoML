@@ -34,7 +34,7 @@ class Engineer:
         self._textual_dtypes = ["object", "string"]
 
         # loading libraries for natural language processing
-        self._nlp = spacy.load('en', disable=['parser', 'ner'])
+        self._nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
     def process(self, data: DataFrame, mapper: 'Mapper', column_type: dict = None, verbose: bool = True,
                 callbacks: list = None) -> DataFrame:
@@ -464,7 +464,7 @@ class Engineer:
         else:  # continuous
             data = data[[info.get("name")]].fillna(info.get("default_value", ""))
 
-            nlp = spacy.load('en', disable=['parser', 'ner'])
+            nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
             word_delimiter = info.get('word_delimiter')
             columns = info.get("column_names")
             new_data = pd.DataFrame(0, index=np.arange(data.shape[0]), columns=columns)
